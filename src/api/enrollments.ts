@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Enrollment, Participant } from '../types';
+import { Enrollment } from '../types';
 
 interface EnrollmentListResponse {
   items: Enrollment[];
@@ -9,6 +9,11 @@ interface EnrollmentListResponse {
 export const enrollmentsAPI = {
   listByEvent: async (eventId: number): Promise<EnrollmentListResponse> => {
     const response = await apiClient.get(`/enrollments/by-event/${eventId}`);
+    return response.data;
+  },
+
+  listByParticipant: async (participantId: number): Promise<EnrollmentListResponse> => {
+    const response = await apiClient.get(`/enrollments/by-participant/${participantId}`);
     return response.data;
   },
 

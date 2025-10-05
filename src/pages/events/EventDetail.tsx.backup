@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2 } from 'lucide-react';
 import { eventsAPI } from '../../api/events';
-import { EnrollParticipantModal } from '../../components/EnrollParticipantModal';
 import { enrollmentsAPI } from '../../api/enrollments';
 import { Event, Enrollment } from '../../types';
 
@@ -13,7 +12,6 @@ export const EventDetail: React.FC = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
-  const [showEnrollModal, setShowEnrollModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -217,8 +215,8 @@ export const EventDetail: React.FC = () => {
           <h2 className="text-xl font-semibold">
             Iscritti ({enrollments.length})
           </h2>
-          <button onClick={() => setShowEnrollModal(true)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2">
-            <Users size={18} /><span>Aggiungi Iscritto</span>
+          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            Aggiungi Iscritto
           </button>
         </div>
 
@@ -279,18 +277,6 @@ export const EventDetail: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Modal Iscrizione */}
-      {showEnrollModal && (
-        <EnrollParticipantModal
-          eventId={event.id}
-          enrolledParticipantIds={enrollments.map(e => e.participant_id)}
-          onClose={() => setShowEnrollModal(false)}
-          onSuccess={() => {
-            fetchEnrollments(event.id);
-          }}
-        />
-      )}
     </div>
   );
 };

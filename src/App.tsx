@@ -4,6 +4,9 @@ import { Login } from './pages/auth/Login';
 import { Dashboard } from './pages/dashboard/Dashboard';
 import { EventList } from './pages/events/EventList';
 import { EventDetail } from './pages/events/EventDetail';
+import { ParticipantList } from './pages/participants/ParticipantList';
+import { ParticipantDetail } from './pages/participants/ParticipantDetail';
+import ECMProgress from './pages/participants/ECMProgress';
 import { Layout } from './components/layout/Layout';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,6 +24,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        
         <Route
           path="/dashboard"
           element={
@@ -29,6 +33,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/events"
           element={
@@ -37,6 +42,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/events/:id"
           element={
@@ -45,6 +51,34 @@ function App() {
             </ProtectedRoute>
           }
         />
+        
+        <Route
+          path="/participants"
+          element={
+            <ProtectedRoute>
+              <ParticipantList />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/participants/:id"
+          element={
+            <ProtectedRoute>
+              <ParticipantDetail />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/ecm/:enrollmentId"
+          element={
+            <ProtectedRoute>
+              <ECMProgress />
+            </ProtectedRoute>
+          }
+        />
+        
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
