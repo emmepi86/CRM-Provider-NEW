@@ -10,6 +10,7 @@ import ECMProgress from './pages/participants/ECMProgress';
 import { SpeakerList } from './pages/speakers/SpeakerList';
 import { SpeakerDetail } from './pages/speakers/SpeakerDetail';
 import { SyncDashboard } from './pages/sync/SyncDashboard';
+import { WebhookDashboard } from './pages/webhooks/WebhookDashboard';
 import { Layout } from './components/layout/Layout';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -105,6 +106,15 @@ function App() {
           element={
             <ProtectedRoute>
               <SyncDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/webhooks"
+          element={
+            <ProtectedRoute>
+              <WebhookDashboard />
             </ProtectedRoute>
           }
         />

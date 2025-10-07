@@ -6,6 +6,7 @@ import {
   Users,
   Mic,
   RefreshCw,
+  Webhook,
   LogOut,
   Menu,
   X
@@ -51,6 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/participants', icon: Users, label: 'Partecipanti' },
     { path: '/speakers', icon: Mic, label: 'Relatori' },
     { path: '/sync', icon: RefreshCw, label: 'Sync Moodle' },
+    { path: '/webhooks', icon: Webhook, label: 'Webhooks' },
   ];
 
   return (
