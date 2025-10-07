@@ -7,15 +7,18 @@ import { EventDetail } from './pages/events/EventDetail';
 import { ParticipantList } from './pages/participants/ParticipantList';
 import { ParticipantDetail } from './pages/participants/ParticipantDetail';
 import ECMProgress from './pages/participants/ECMProgress';
+import { SpeakerList } from './pages/speakers/SpeakerList';
+import { SpeakerDetail } from './pages/speakers/SpeakerDetail';
+import { SyncDashboard } from './pages/sync/SyncDashboard';
 import { Layout } from './components/layout/Layout';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const token = localStorage.getItem('access_token');
-  
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <Layout>{children}</Layout>;
 };
 
@@ -24,7 +27,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        
+
         <Route
           path="/dashboard"
           element={
@@ -33,7 +36,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/events"
           element={
@@ -42,7 +45,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/events/:id"
           element={
@@ -51,7 +54,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/participants"
           element={
@@ -60,7 +63,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/participants/:id"
           element={
@@ -69,7 +72,25 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
+        <Route
+          path="/speakers"
+          element={
+            <ProtectedRoute>
+              <SpeakerList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/speakers/:id"
+          element={
+            <ProtectedRoute>
+              <SpeakerDetail />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/ecm/:enrollmentId"
           element={
@@ -78,9 +99,17 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
+        <Route
+          path="/sync"
+          element={
+            <ProtectedRoute>
+              <SyncDashboard />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

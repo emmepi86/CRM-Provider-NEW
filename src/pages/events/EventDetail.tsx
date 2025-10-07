@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy } from 'lucide-react';
 import { eventsAPI } from '../../api/events';
 import { EnrollParticipantModal } from '../../components/EnrollParticipantModal';
 import { enrollmentsAPI } from '../../api/enrollments';
+import { SessionList } from '../../components/events/SessionList';
+import { FolderBrowser } from '../../components/events/FolderBrowser';
+import { EventSpeakers } from '../../components/events/EventSpeakers';
+import { EnrollmentNotesEdit } from '../../components/enrollments/EnrollmentNotesEdit';
+import { SponsorsList } from '../../components/events/sponsors/SponsorsList';
+import { PatronagesList } from '../../components/events/patronages/PatronagesList';
 import { Event, Enrollment } from '../../types';
+
+type TabType = 'enrollments' | 'sessions' | 'documents' | 'speakers' | 'sponsors' | 'patronages';
 
 export const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +22,7 @@ export const EventDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('enrollments');
 
   useEffect(() => {
     if (id) {
@@ -71,8 +80,8 @@ export const EventDetail: React.FC = () => {
   };
 
   const getTypeBadge = (type: string) => {
-    return type === 'ecm' 
-      ? 'bg-purple-100 text-purple-800' 
+    return type === 'ecm'
+      ? 'bg-purple-100 text-purple-800'
       : 'bg-orange-100 text-orange-800';
   };
 
@@ -86,113 +95,76 @@ export const EventDetail: React.FC = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  if (loading) {
+  if (loading || !event) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Caricamento evento...</div>
-      </div>
-    );
-  }
-
-  if (!event) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <p className="text-gray-600 mb-4">Evento non trovato</p>
-        <button
-          onClick={() => navigate('/events')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Torna agli eventi
-        </button>
+        <p className="text-gray-500">Caricamento...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate('/events')}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft size={20} />
-          <span>Torna agli eventi</span>
-        </button>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate('/events')}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
+        </div>
         <div className="flex items-center space-x-2">
-          <span className={`px-3 py-1 rounded text-sm font-medium ${getTypeBadge(event.event_type)}`}>
-            {event.event_type.toUpperCase()}
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeBadge(event.event_type)}`}>
+            {event.event_type === 'ecm' ? 'ECM' : 'Non-ECM'}
           </span>
-          <span className={`px-3 py-1 rounded text-sm font-medium ${getStatusBadge(event.status)}`}>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(event.status)}`}>
             {event.status}
           </span>
         </div>
       </div>
 
-      {/* Titolo e Info Principali */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">{event.title}</h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex items-start space-x-3">
-            <Calendar className="text-blue-600 mt-1" size={20} />
-            <div>
-              <p className="text-sm text-gray-600">Date</p>
-              <p className="font-medium">
-                {new Date(event.start_date).toLocaleDateString('it-IT', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric'
-                })}
-                {' - '}
-                {new Date(event.end_date).toLocaleDateString('it-IT', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric'
-                })}
-              </p>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-3">
+          <Calendar className="text-blue-600" size={24} />
+          <div>
+            <p className="text-sm text-gray-600">Date</p>
+            <p className="font-medium">
+              {new Date(event.start_date).toLocaleDateString('it-IT')}
+            </p>
           </div>
+        </div>
 
-          {event.location && (
-            <div className="flex items-start space-x-3">
-              <MapPin className="text-blue-600 mt-1" size={20} />
-              <div>
-                <p className="text-sm text-gray-600">Luogo</p>
-                <p className="font-medium">{event.location}</p>
-              </div>
-            </div>
-          )}
+        <div className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-3">
+          <MapPin className="text-green-600" size={24} />
+          <div>
+            <p className="text-sm text-gray-600">Location</p>
+            <p className="font-medium">{event.location || 'Non specificata'}</p>
+          </div>
+        </div>
 
-          {event.max_participants && (
-            <div className="flex items-start space-x-3">
-              <Users className="text-blue-600 mt-1" size={20} />
-              <div>
-                <p className="text-sm text-gray-600">Posti disponibili</p>
-                <p className="font-medium">
-                  {enrollments.length} / {event.max_participants} iscritti
-                </p>
-              </div>
-            </div>
-          )}
+        <div className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-3">
+          <Users className="text-purple-600" size={24} />
+          <div>
+            <p className="text-sm text-gray-600">Iscritti</p>
+            <p className="font-medium">{enrollments.length}/{event.max_participants || '∞'}</p>
+          </div>
+        </div>
 
-          {event.credits && (
-            <div className="flex items-start space-x-3">
-              <Award className="text-blue-600 mt-1" size={20} />
-              <div>
-                <p className="text-sm text-gray-600">Crediti ECM</p>
-                <p className="font-medium">{event.credits} crediti</p>
-              </div>
-            </div>
-          )}
+        <div className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-3">
+          <Award className="text-yellow-600" size={24} />
+          <div>
+            <p className="text-sm text-gray-600">Crediti ECM</p>
+            <p className="font-medium">{event.ecm_credits || 'N/A'}</p>
+          </div>
         </div>
       </div>
 
-      {/* Dettagli ECM */}
       {event.event_type === 'ecm' && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Informazioni ECM</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4 text-purple-900">Informazioni ECM</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-600">Codice ECM</p>
               <p className="font-medium">{event.ecm_code || 'Non assegnato'}</p>
@@ -211,76 +183,188 @@ export const EventDetail: React.FC = () => {
         </div>
       )}
 
-      {/* Lista Iscritti */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">
-            Iscritti ({enrollments.length})
-          </h2>
-          <button onClick={() => setShowEnrollModal(true)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2">
-            <Users size={18} /><span>Aggiungi Iscritto</span>
-          </button>
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('enrollments')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'enrollments'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Users size={18} />
+              <span>Iscritti ({enrollments.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('speakers')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'speakers'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Mic size={18} />
+              <span>Relatori</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('sessions')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'sessions'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Clock size={18} />
+              <span>Sessioni & Programma</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('documents')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'documents'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText size={18} />
+              <span>Documenti</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('sponsors')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'sponsors'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Building2 size={18} />
+              <span>Sponsor</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('patronages')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'patronages'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Trophy size={18} />
+              <span>Patrocini</span>
+            </button>
+          </nav>
         </div>
 
-        {loadingEnrollments ? (
-          <p className="text-gray-500 text-center py-8">Caricamento iscritti...</p>
-        ) : enrollments.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">Nessun iscritto per questo evento</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Nome</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Stato</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Pagamento</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Data Iscrizione</th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enrollments.map((enrollment) => (
-                  <tr key={enrollment.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      {enrollment.participant ? 
-                        `${enrollment.participant.first_name} ${enrollment.participant.last_name}` 
-                        : 'N/A'}
-                    </td>
-                    <td className="py-3 px-4">
-                      {enrollment.participant?.email || 'N/A'}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(enrollment.status)}`}>
-                        {enrollment.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getPaymentBadge(enrollment.payment_status)}`}>
-                        {enrollment.payment_status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      {new Date(enrollment.enrollment_date).toLocaleDateString('it-IT')}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handleDeleteEnrollment(enrollment.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Rimuovi iscrizione"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div className="p-6">
+          {activeTab === 'enrollments' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">
+                  Iscritti ({enrollments.length})
+                </h2>
+                <button
+                  onClick={() => setShowEnrollModal(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                >
+                  <Users size={18} />
+                  <span>Aggiungi Iscritto</span>
+                </button>
+              </div>
+
+              {loadingEnrollments ? (
+                <p className="text-gray-500 text-center py-8">Caricamento iscritti...</p>
+              ) : enrollments.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Nessun iscritto per questo evento</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Nome</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Stato</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Pagamento</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Data Iscrizione</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Note</th>
+                        <th className="text-center py-3 px-4 font-semibold text-gray-700">Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {enrollments.map((enrollment) => (
+                        <tr key={enrollment.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            {enrollment.participant ? (
+                              <button
+                                onClick={() => navigate(`/participants/${enrollment.participant_id}`)}
+                                className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-left"
+                              >
+                                {`${enrollment.participant.first_name} ${enrollment.participant.last_name}`}
+                              </button>
+                            ) : 'N/A'}
+                          </td>
+                          <td className="py-3 px-4">
+                            {enrollment.participant?.email || 'N/A'}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(enrollment.status)}`}>
+                              {enrollment.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${getPaymentBadge(enrollment.payment_status)}`}>
+                              {enrollment.payment_status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {new Date(enrollment.enrollment_date).toLocaleDateString('it-IT')}
+                          </td>
+                          <td className="py-3 px-4">
+                            <EnrollmentNotesEdit
+                              enrollmentId={enrollment.id}
+                              currentNotes={enrollment.notes}
+                              onUpdate={() => fetchEnrollments(event.id)}
+                            />
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              onClick={() => handleDeleteEnrollment(enrollment.id)}
+                              className="text-red-600 hover:text-red-800"
+                              title="Rimuovi iscrizione"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'speakers' && (
+            <EventSpeakers eventId={event.id} />
+          )}
+
+          {activeTab === 'sessions' && (
+            <SessionList eventId={event.id} />
+          )}
+
+          {activeTab === 'documents' && (
+            <FolderBrowser entityType="event" entityId={event.id} />
+          )}
+
+          {activeTab === 'sponsors' && (
+            <SponsorsList eventId={event.id} />
+          )}
+
+          {activeTab === 'patronages' && (
+            <PatronagesList eventId={event.id} />
+          )}
+        </div>
       </div>
 
-      {/* Modal Iscrizione */}
       {showEnrollModal && (
         <EnrollParticipantModal
           eventId={event.id}

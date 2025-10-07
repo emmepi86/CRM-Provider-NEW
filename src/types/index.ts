@@ -37,6 +37,15 @@ export interface Event {
   updated_at: string;
 }
 
+export interface TravelNeeds {
+  hotel_required?: boolean;
+  flight_required?: boolean;
+  dietary_restrictions?: string;
+  special_requirements?: string;
+  notes?: string;
+}
+
+
 export interface Participant {
   id: number;
   tenant_id: number;
@@ -72,6 +81,7 @@ export interface Participant {
   workplace_country?: string;
   vat_number?: string;
   notes?: string;
+  travel_needs?: TravelNeeds;
   tags?: string[];
   moodle_user_id?: number;
   wordpress_user_id?: number;
@@ -90,6 +100,7 @@ export interface Enrollment {
   payment_status: 'unpaid' | 'partial' | 'paid' | 'refunded';
   payment_amount?: number;
   enrollment_date: string;
+  notes?: string;
   event?: Event;
   participant?: Participant;
 }
@@ -124,4 +135,122 @@ export interface ECMTracking {
     tracking: number;
     timecompleted?: number;
   }[];
+}
+
+export interface EventSession {
+  id: number;
+  event_id: number;
+  tenant_id: number;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  title: string;
+  description?: string | null;
+  session_type: 'LECTURE' | 'WORKSHOP' | 'BREAK' | 'LUNCH' | 'REGISTRATION' | 'OTHER';
+  is_online: boolean;
+  is_onsite: boolean;
+  room_name?: string | null;
+  requires_attendance: boolean;
+  min_attendance_minutes?: number | null;
+  meeting_url?: string;
+  max_capacity?: number;
+  ecm_credits?: number;
+  speaker_name?: string;
+  speaker_bio?: string;
+  materials_url?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SessionCreate {
+  event_id: number;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  title: string;
+  description?: string;
+  session_type: 'LECTURE' | 'WORKSHOP' | 'BREAK' | 'LUNCH' | 'REGISTRATION' | 'OTHER';
+  is_online: boolean;
+  meeting_url?: string;
+  room?: string;
+  max_capacity?: number;
+  requires_attendance: boolean;
+  ecm_credits?: number;
+  speaker_name?: string;
+  speaker_bio?: string;
+  materials_url?: string;
+  notes?: string;
+}
+
+export interface ProgramGeneratorRequest {
+  event_id: number;
+  conference_date: string;
+  start_time: string;
+  end_time: string;
+  session_duration_minutes: number;
+  break_duration_minutes: number;
+  lunch_start_time?: string;
+  lunch_duration_minutes?: number;
+  session_titles?: string[];
+}
+
+export interface AttendanceRecord {
+  id: number;
+  session_id: number;
+  enrollment_id: number;
+  participant_id: number;
+  check_in_time?: string;
+  check_out_time?: string;
+  duration_minutes?: number;
+  attendance_status: 'present' | 'absent' | 'late' | 'excused';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Document {
+  id: number;
+  tenant_id: number;
+  entity_type: 'event' | 'participant' | 'speaker' | 'enrollment';
+  entity_id: number;
+  folder_id?: number | null;
+  file_name: string;
+  file_url: string;
+  file_size?: number;
+  mime_type?: string;
+  uploaded_by_user_id?: number;
+  tags: string[];
+  uploaded_at: string;
+}
+
+export interface DocumentListResponse {
+  documents: Document[];
+  total: number;
+}
+
+export interface Folder {
+  id: number;
+  tenant_id: number;
+  entity_type: 'event' | 'participant' | 'speaker' | 'enrollment';
+  entity_id: number;
+  parent_folder_id: number | null;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FolderCreate {
+  entity_type: string;
+  entity_id: number;
+  parent_folder_id?: number | null;
+  name: string;
+  description?: string;
+}
+
+export interface FolderContents {
+  folder: Folder;
+  subfolders: Folder[];
+  document_count: number;
 }

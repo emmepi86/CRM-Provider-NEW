@@ -6,6 +6,13 @@ interface EnrollmentListResponse {
   total: number;
 }
 
+interface EnrollmentUpdate {
+  status?: string;
+  payment_status?: string;
+  payment_amount?: number;
+  notes?: string;
+}
+
 export const enrollmentsAPI = {
   listByEvent: async (eventId: number): Promise<EnrollmentListResponse> => {
     const response = await apiClient.get(`/enrollments/by-event/${eventId}`);
@@ -24,6 +31,11 @@ export const enrollmentsAPI = {
       status: 'confirmed',
       payment_status: 'unpaid',
     });
+    return response.data;
+  },
+
+  update: async (enrollmentId: number, data: EnrollmentUpdate): Promise<Enrollment> => {
+    const response = await apiClient.put(`/enrollments/${enrollmentId}`, data);
     return response.data;
   },
 

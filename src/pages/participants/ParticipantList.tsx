@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Filter, Search, Mail, Briefcase, MapPin } from 'lucide-react';
+import { Users, Filter, Search, Mail, Briefcase, MapPin, UserPlus } from 'lucide-react';
 import { participantsAPI } from '../../api/participants';
 import { Participant } from '../../types';
+import { CreateParticipantModal } from '../../components/participants/CreateParticipantModal';
 
 export const ParticipantList: React.FC = () => {
   const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
   });
@@ -37,6 +39,11 @@ export const ParticipantList: React.FC = () => {
     fetchParticipants();
   };
 
+  const handleCreateSuccess = (participant: Participant) => {
+    fetchParticipants();
+    navigate(`/participants/${participant.id}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -54,10 +61,10 @@ export const ParticipantList: React.FC = () => {
           <p className="text-gray-600 mt-1">Totale: {total}</p>
         </div>
         <button
-          onClick={() => navigate('/participants/new')}
+          onClick={() => setShowCreateModal(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
         >
-          <Users size={18} />
+          <UserPlus size={18} />
           <span>Nuovo Partecipante</span>
         </button>
       </div>
@@ -195,6 +202,14 @@ export const ParticipantList: React.FC = () => {
           <Users className="mx-auto text-gray-400 mb-4" size={48} />
           <p className="text-gray-600">Nessun partecipante trovato</p>
         </div>
+      )}
+
+      {/* Create Participant Modal */}
+      {showCreateModal && (
+        <CreateParticipantModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleCreateSuccess}
+        />
       )}
     </div>
   );

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  User, Mail, Phone, MapPin, Briefcase, Calendar, 
-  ArrowLeft, FileText, Award, Building 
+import {
+  User, Mail, Phone, MapPin, Briefcase, Calendar,
+  ArrowLeft, FileText, Award, Building, Plane, Hotel, Utensils
 } from 'lucide-react';
 import { participantsAPI } from '../../api/participants';
 import { enrollmentsAPI } from '../../api/enrollments';
+import { ParticipantNotesEdit } from '../../components/participants/ParticipantNotesEdit';
 import { Participant, Enrollment } from '../../types';
 
 export const ParticipantDetail: React.FC = () => {
@@ -89,6 +90,14 @@ export const ParticipantDetail: React.FC = () => {
       </div>
     );
   }
+
+  const hasTravelNeeds = participant.travel_needs && (
+    participant.travel_needs.hotel_required ||
+    participant.travel_needs.flight_required ||
+    participant.travel_needs.dietary_restrictions ||
+    participant.travel_needs.special_requirements ||
+    participant.travel_needs.notes
+  );
 
   return (
     <div className="space-y-6">
@@ -325,6 +334,58 @@ export const ParticipantDetail: React.FC = () => {
         </div>
       )}
 
+      {/* Esigenze Viaggio */}
+      {hasTravelNeeds && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-blue-900 mb-4 flex items-center space-x-2">
+            <Plane size={20} />
+            <span>Esigenze Viaggio</span>
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              {participant.travel_needs?.hotel_required && (
+                <div className="flex items-center space-x-3 text-sm">
+                  <Hotel size={18} className="text-blue-600" />
+                  <span className="text-gray-900 font-medium">Hotel richiesto</span>
+                </div>
+              )}
+              {participant.travel_needs?.flight_required && (
+                <div className="flex items-center space-x-3 text-sm">
+                  <Plane size={18} className="text-blue-600" />
+                  <span className="text-gray-900 font-medium">Volo richiesto</span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2 text-sm">
+              {participant.travel_needs?.dietary_restrictions && (
+                <div>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <Utensils size={16} className="text-blue-600" />
+                    <span className="text-gray-600 font-medium">Restrizioni alimentari:</span>
+                  </div>
+                  <p className="text-gray-900 ml-6">{participant.travel_needs.dietary_restrictions}</p>
+                </div>
+              )}
+              {participant.travel_needs?.special_requirements && (
+                <div>
+                  <span className="text-gray-600 font-medium">Requisiti speciali:</span>
+                  <p className="text-gray-900 mt-1">{participant.travel_needs.special_requirements}</p>
+                </div>
+              )}
+            </div>
+
+            {participant.travel_needs?.notes && (
+              <div className="md:col-span-2">
+                <span className="text-gray-600 font-medium text-sm">Note viaggio:</span>
+                <p className="text-gray-900 mt-1 text-sm">{participant.travel_needs.notes}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Storico Iscrizioni */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
@@ -349,7 +410,7 @@ export const ParticipantDetail: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {enrollments.map((enrollment) => (
-                  <tr 
+                  <tr
                     key={enrollment.id}
                     onClick={() => enrollment.event && navigate(`/events/${enrollment.event.id}`)}
                     className="hover:bg-gray-50 cursor-pointer"
@@ -365,7 +426,7 @@ export const ParticipantDetail: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {enrollment.event?.start_date && 
+                      {enrollment.event?.start_date &&
                         new Date(enrollment.event.start_date).toLocaleDateString('it-IT')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -379,6 +440,8 @@ export const ParticipantDetail: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(enrollment.enrollment_date).toLocaleDateString('it-IT')}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={(e) => {
@@ -389,8 +452,6 @@ export const ParticipantDetail: React.FC = () => {
                       >
                         Vedi ECM
                       </button>
-                    </td>
-                      {new Date(enrollment.enrollment_date).toLocaleDateString('it-IT')}
                     </td>
                   </tr>
                 ))}
@@ -404,16 +465,18 @@ export const ParticipantDetail: React.FC = () => {
         )}
       </div>
 
-      {/* Note */}
-      {participant.notes && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-            <FileText size={20} />
-            <span>Note</span>
-          </h2>
-          <p className="text-gray-700 whitespace-pre-wrap">{participant.notes}</p>
-        </div>
-      )}
+      {/* Note Globali */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <FileText size={20} />
+          <span>Note Globali Partecipante</span>
+        </h2>
+        <ParticipantNotesEdit
+          participantId={participant.id}
+          currentNotes={participant.notes}
+          onUpdate={() => fetchParticipant(participant.id)}
+        />
+      </div>
     </div>
   );
 };
