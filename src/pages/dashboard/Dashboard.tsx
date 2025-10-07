@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, TrendingUp, Award } from 'lucide-react';
 import axios from 'axios';
 
@@ -12,6 +13,7 @@ interface MetricsResponse {
 }
 
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<MetricsResponse['totals'] | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -107,15 +109,24 @@ export const Dashboard: React.FC = () => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold mb-4">Azioni Rapide</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors">
+          <button
+            onClick={() => navigate('/events')}
+            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+          >
             <Calendar className="mx-auto mb-2 text-gray-400" size={32} />
             <p className="text-sm font-medium">Nuovo Evento</p>
           </button>
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors">
+          <button
+            onClick={() => navigate('/participants')}
+            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+          >
             <Users className="mx-auto mb-2 text-gray-400" size={32} />
             <p className="text-sm font-medium">Nuovo Partecipante</p>
           </button>
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors">
+          <button
+            onClick={() => navigate('/sync')}
+            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
+          >
             <TrendingUp className="mx-auto mb-2 text-gray-400" size={32} />
             <p className="text-sm font-medium">Sync Moodle</p>
           </button>

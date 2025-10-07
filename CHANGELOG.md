@@ -2,9 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2025-10-07
+## [Unreleased] - 2025-10-08
 
 ### Added
+- **Badge System** for in-person and hybrid events
+  - Visual drag & drop badge editor with real-time preview
+  - Support for text, dynamic fields, images, and QR codes
+  - Template system: create, edit, duplicate, import/export JSON templates
+  - Front-only and double-sided badge support
+  - Only available for RESIDENTIAL and HYBRID events (disabled for FAD/WEBINAR)
+  - Badge tab in event detail page with conditional rendering
+  - Integration with backend `/api/v1/events/{id}/badge-templates` endpoints
+
+- **Event Edit Functionality**
+  - Full edit modal with same comprehensive form as creation
+  - Pre-populated with existing event data
+  - Smart readonly protection: events synced from Moodle are protected
+  - Visual indicator badge "Sincronizzato da Moodle" for readonly events
+  - Edit button visible only for CRM-created events (`moodle_course_id IS NULL`)
+  - Uses `PUT /api/v1/events/{event_id}` endpoint
+
+- **Complete Event Creation Form** with all database fields
+  - 6 collapsible sections: Basic Info, Venue, FAD Platform, ECM, Pricing, Registration
+  - Conditional sections based on delivery_mode and event_type
+  - All advanced fields: venue details, FAD platform, ECM certifications, pricing, materials
+  - Dynamic field requirements matching backend validation
+  - Event format selector (CORSO, CONGRESSO, CONVEGNO, WORKSHOP, SEMINARIO)
+  - Pricing with early bird support and VAT configuration
+  - Registration deadlines and public event URLs
+  - 86 total fields covering complete event lifecycle
+
 - **Participant Management**: Complete participant creation modal with all Agenas-required fields
   - Full demographic data (name, email, fiscal code, birth info)
   - Residence and contact information
@@ -38,6 +65,10 @@ All notable changes to this project will be documented in this file.
   - Click on participant name in event detail → navigate to participant detail page
 
 ### Fixed
+- **Badge tab visibility issue**: Fixed enum value mismatch between backend (`RESIDENTIAL`, `FAD`, `HYBRID`) and frontend (was using Italian lowercase `residenziale`, `misto`)
+- **Event type interface alignment**: Updated Event interface to match backend enum values exactly
+- **Dashboard action buttons**: Added onClick handlers to "Nuovo Evento", "Nuovo Partecipante", and "Sync Moodle" buttons
+- **Missing "Add Event" button**: Added "Nuovo Evento" button in EventList page (was never implemented)
 - **Sponsor/Patronage 422 Errors**: Removed `event_id` from PATCH requests (only needed in POST)
 - **Empty Date Fields**: Convert empty strings to `null` for date fields to satisfy Pydantic validation
   - Affects: sponsor contract_date, valid_from, valid_to

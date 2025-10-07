@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy } from 'lucide-react';
+import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit } from 'lucide-react';
 import { eventsAPI } from '../../api/events';
 import { EnrollParticipantModal } from '../../components/EnrollParticipantModal';
 import { enrollmentsAPI } from '../../api/enrollments';
@@ -10,9 +10,11 @@ import { EventSpeakers } from '../../components/events/EventSpeakers';
 import { EnrollmentNotesEdit } from '../../components/enrollments/EnrollmentNotesEdit';
 import { SponsorsList } from '../../components/events/sponsors/SponsorsList';
 import { PatronagesList } from '../../components/events/patronages/PatronagesList';
+import { BadgeTab } from '../../components/badges/BadgeTab';
+import { EditEventModal } from '../../components/events/EditEventModal';
 import { Event, Enrollment } from '../../types';
 
-type TabType = 'enrollments' | 'sessions' | 'documents' | 'speakers' | 'sponsors' | 'patronages';
+type TabType = 'enrollments' | 'sessions' | 'documents' | 'speakers' | 'sponsors' | 'patronages' | 'badges';
 
 export const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +24,7 @@ export const EventDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('enrollments');
 
   useEffect(() => {
@@ -116,6 +119,21 @@ export const EventDetail: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
         </div>
         <div className="flex items-center space-x-2">
+          {!event.moodle_course_id && (
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              title="Modifica Evento"
+            >
+              <Edit size={18} />
+              <span>Modifica</span>
+            </button>
+          )}
+          {event.moodle_course_id && (
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600" title="Evento sincronizzato da Moodle (readonly)">
+              Sincronizzato da Moodle
+            </span>
+          )}
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeBadge(event.event_type)}`}>
             {event.event_type === 'ecm' ? 'ECM' : 'Non-ECM'}
           </span>
@@ -252,6 +270,19 @@ export const EventDetail: React.FC = () => {
               <Trophy size={18} />
               <span>Patrocini</span>
             </button>
+            {(event.delivery_mode === 'RESIDENTIAL' || event.delivery_mode === 'HYBRID') && (
+              <button
+                onClick={() => setActiveTab('badges')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === 'badges'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Clipboard size={18} />
+                <span>Badge</span>
+              </button>
+            )}
           </nav>
         </div>
 
@@ -362,6 +393,10 @@ export const EventDetail: React.FC = () => {
           {activeTab === 'patronages' && (
             <PatronagesList eventId={event.id} />
           )}
+
+          {activeTab === 'badges' && (
+            <BadgeTab eventId={event.id} deliveryMode={event.delivery_mode || 'RESIDENTIAL'} />
+          )}
         </div>
       </div>
 
@@ -372,6 +407,17 @@ export const EventDetail: React.FC = () => {
           onClose={() => setShowEnrollModal(false)}
           onSuccess={() => {
             fetchEnrollments(event.id);
+          }}
+        />
+      )}
+
+      {showEditModal && (
+        <EditEventModal
+          event={event}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={() => {
+            fetchEvent(event.id);
+            setShowEditModal(false);
           }}
         />
       )}

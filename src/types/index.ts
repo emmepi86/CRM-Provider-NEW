@@ -23,6 +23,7 @@ export interface Event {
   title: string;
   event_type: 'ecm' | 'non_ecm';
   status: 'draft' | 'published' | 'cancelled' | 'completed';
+  delivery_mode?: 'RESIDENTIAL' | 'FAD' | 'HYBRID' | 'WEBINAR';
   start_date: string;
   end_date: string;
   location?: string;

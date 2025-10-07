@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Filter, Search } from 'lucide-react';
+import { Calendar, Filter, Search, Plus } from 'lucide-react';
 import { eventsAPI } from '../../api/events';
 import { Event } from '../../types';
+import { CreateEventModal } from '../../components/events/CreateEventModal';
 
 export const EventList: React.FC = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
     event_type: '',
@@ -64,7 +66,19 @@ export const EventList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header con filtri */}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Eventi</h1>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+        >
+          <Plus size={20} />
+          <span>Nuovo Evento</span>
+        </button>
+      </div>
+
+      {/* Filtri */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Filtri</h2>
@@ -185,6 +199,17 @@ export const EventList: React.FC = () => {
           <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
           <p className="text-gray-600">Nessun evento trovato</p>
         </div>
+      )}
+
+      {/* Create Event Modal */}
+      {showCreateModal && (
+        <CreateEventModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            fetchEvents();
+            setShowCreateModal(false);
+          }}
+        />
       )}
     </div>
   );
