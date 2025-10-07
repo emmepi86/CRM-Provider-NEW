@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { Rnd } from 'react-rnd';
 import { badgesAPI, BadgeTemplate, BadgeConfig, BadgeElementConfig } from '../../api/badges';
+import { documentsAPI } from '../../api/documents';
 import {
   Save,
   X,
@@ -12,7 +14,8 @@ import {
   EyeOff,
   Copy,
   Settings,
-  Grid
+  Grid,
+  Upload
 } from 'lucide-react';
 
 interface BadgeEditorProps {
@@ -34,6 +37,11 @@ const AVAILABLE_FIELDS = [
   { value: '{evento_luogo}', label: 'Luogo Evento' },
   { value: '{qr_code}', label: 'QR Code' },
 ];
+
+// Extended BadgeElementConfig with image_url
+interface ExtendedBadgeElementConfig extends BadgeElementConfig {
+  image_url?: string;
+}
 
 export const BadgeEditor: React.FC<BadgeEditorProps> = ({
   eventId,
@@ -71,15 +79,20 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const canvasRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Scale factor for display (4:1 - each mm = 4px)
+  const SCALE = 4;
 
   const currentConfig = currentSide === 'front' ? frontConfig : backConfig;
   const setCurrentConfig = currentSide === 'front' ? setFrontConfig : setBackConfig;
 
   // Add new element to canvas
   const addElement = (type: 'text' | 'image' | 'qrcode' | 'field') => {
-    const newElement: BadgeElementConfig = {
+    const newElement: ExtendedBadgeElementConfig = {
       id: `element-${Date.now()}`,
       type,
       x: 10,
@@ -117,7 +130,7 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
   };
 
   // Update element
-  const updateElement = (elementId: string, updates: Partial<BadgeElementConfig>) => {
+  const updateElement = (elementId: string, updates: Partial<ExtendedBadgeElementConfig>) => {
     setCurrentConfig({
       ...currentConfig,
       elements: currentConfig.elements.map((el) =>
@@ -131,7 +144,7 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
     const element = currentConfig.elements.find((el) => el.id === elementId);
     if (!element) return;
 
-    const duplicate: BadgeElementConfig = {
+    const duplicate: ExtendedBadgeElementConfig = {
       ...element,
       id: `element-${Date.now()}`,
       x: element.x + 5,
@@ -144,27 +157,34 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
     });
   };
 
-  // Drag element
-  const handleElementDragStart = (e: React.DragEvent, elementId: string) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('elementId', elementId);
+  // Handle image upload
+  const handleImageUpload = async (elementId: string, file: File) => {
+    try {
+      setUploading(true);
+
+      // Upload to documents API
+      const uploadedDoc = await documentsAPI.upload('event', eventId, file, 'badge-image');
+
+      // Update element with image URL
+      updateElement(elementId, {
+        image_url: uploadedDoc.file_url,
+        content: uploadedDoc.file_name
+      });
+
+      alert('Immagine caricata con successo!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Errore durante il caricamento dell\'immagine');
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleCanvasDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleCanvasDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const elementId = e.dataTransfer.getData('elementId');
-    if (!elementId || !canvasRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * currentConfig.width;
-    const y = ((e.clientY - rect.top) / rect.height) * currentConfig.height;
-
-    updateElement(elementId, { x, y });
+  // Trigger file input for selected image element
+  const triggerImageUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   // Save template
@@ -200,7 +220,7 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
   };
 
   const selectedElementData = selectedElement
-    ? currentConfig.elements.find((el) => el.id === selectedElement)
+    ? (currentConfig.elements.find((el) => el.id === selectedElement) as ExtendedBadgeElementConfig | undefined)
     : null;
 
   return (
@@ -214,7 +234,7 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
                 {isCreating ? 'Nuovo Template Badge' : 'Modifica Template Badge'}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                Usa il drag & drop per posizionare gli elementi sul badge
+                Trascina e ridimensiona gli elementi sul badge
               </p>
             </div>
 
@@ -330,6 +350,20 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
                       <option value="10">10</option>
                     </select>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Colore Sfondo
+                    </label>
+                    <input
+                      type="color"
+                      value={currentConfig.background_color}
+                      onChange={(e) =>
+                        setCurrentConfig({ ...currentConfig, background_color: e.target.value })
+                      }
+                      className="w-full h-10 border border-gray-300 rounded cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -405,12 +439,10 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
               <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center min-h-[600px]">
                 <div
                   ref={canvasRef}
-                  onDragOver={handleCanvasDragOver}
-                  onDrop={handleCanvasDrop}
                   className="bg-white shadow-2xl relative overflow-hidden"
                   style={{
-                    width: `${currentConfig.width * 4}px`,
-                    height: `${currentConfig.height * 4}px`,
+                    width: `${currentConfig.width * SCALE}px`,
+                    height: `${currentConfig.height * SCALE}px`,
                     backgroundColor: currentConfig.background_color,
                     backgroundImage: showGrid
                       ? 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)'
@@ -418,43 +450,87 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
                     backgroundSize: showGrid ? '20px 20px' : undefined,
                   }}
                 >
-                  {/* Render elements */}
-                  {currentConfig.elements.map((element) => (
-                    <div
-                      key={element.id}
-                      draggable
-                      onDragStart={(e) => handleElementDragStart(e, element.id)}
-                      onClick={() => setSelectedElement(element.id)}
-                      className={`absolute cursor-move border-2 ${
-                        selectedElement === element.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'
-                      } flex items-center justify-center p-2 overflow-hidden`}
-                      style={{
-                        left: `${(element.x / currentConfig.width) * 100}%`,
-                        top: `${(element.y / currentConfig.height) * 100}%`,
-                        width: `${(element.width / currentConfig.width) * 100}%`,
-                        height: `${(element.height / currentConfig.height) * 100}%`,
-                        fontSize: element.style?.fontSize ? `${element.style.fontSize}px` : undefined,
-                        fontFamily: element.style?.fontFamily,
-                        color: element.style?.color,
-                        fontWeight: element.style?.fontWeight,
-                        textAlign: element.style?.textAlign as any,
-                        zIndex: element.z_index,
-                      }}
-                    >
-                      {element.type === 'text' || element.type === 'field' ? (
-                        <span className="text-xs">{element.content}</span>
-                      ) : element.type === 'qrcode' ? (
-                        <QrCode size={24} className="text-gray-400" />
-                      ) : (
-                        <ImageIcon size={24} className="text-gray-400" />
-                      )}
-                    </div>
-                  ))}
+                  {/* Render elements with react-rnd */}
+                  {currentConfig.elements.map((element) => {
+                    const ext = element as ExtendedBadgeElementConfig;
+                    return (
+                      <Rnd
+                        key={element.id}
+                        size={{
+                          width: element.width * SCALE,
+                          height: element.height * SCALE,
+                        }}
+                        position={{
+                          x: element.x * SCALE,
+                          y: element.y * SCALE,
+                        }}
+                        onDragStop={(e, d) => {
+                          updateElement(element.id, {
+                            x: d.x / SCALE,
+                            y: d.y / SCALE,
+                          });
+                        }}
+                        onResizeStop={(e, direction, ref, delta, position) => {
+                          updateElement(element.id, {
+                            width: parseInt(ref.style.width) / SCALE,
+                            height: parseInt(ref.style.height) / SCALE,
+                            x: position.x / SCALE,
+                            y: position.y / SCALE,
+                          });
+                        }}
+                        bounds="parent"
+                        className={`${
+                          selectedElement === element.id
+                            ? 'ring-2 ring-blue-500 bg-blue-50'
+                            : 'ring-1 ring-gray-300 bg-white'
+                        } flex items-center justify-center overflow-hidden cursor-move`}
+                        onClick={() => setSelectedElement(element.id)}
+                        enableResizing={{
+                          top: true,
+                          right: true,
+                          bottom: true,
+                          left: true,
+                          topRight: true,
+                          bottomRight: true,
+                          bottomLeft: true,
+                          topLeft: true,
+                        }}
+                        style={{
+                          zIndex: element.z_index,
+                        }}
+                      >
+                        <div
+                          className="w-full h-full flex items-center justify-center p-1"
+                          style={{
+                            fontSize: element.style?.fontSize ? `${element.style.fontSize}px` : undefined,
+                            fontFamily: element.style?.fontFamily,
+                            color: element.style?.color,
+                            fontWeight: element.style?.fontWeight,
+                            textAlign: element.style?.textAlign as any,
+                          }}
+                        >
+                          {element.type === 'text' || element.type === 'field' ? (
+                            <span className="text-xs truncate">{element.content}</span>
+                          ) : element.type === 'qrcode' ? (
+                            <QrCode size={24} className="text-gray-400" />
+                          ) : ext.image_url ? (
+                            <img
+                              src={`${process.env.REACT_APP_API_URL?.replace('/api/v1', '')}${ext.image_url}`}
+                              alt="Badge"
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <ImageIcon size={24} className="text-gray-400" />
+                          )}
+                        </div>
+                      </Rnd>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="mt-4 text-center text-sm text-gray-600">
-                Dimensioni: {currentConfig.width}x{currentConfig.height} {currentConfig.unit} (scala 4:1 per editor)
+                Dimensioni: {currentConfig.width}x{currentConfig.height} {currentConfig.unit} • Scala di visualizzazione: {SCALE}:1
               </div>
             </div>
 
@@ -489,47 +565,83 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
                         <label className="block text-xs font-medium text-gray-700 mb-1">X (mm)</label>
                         <input
                           type="number"
-                          value={Math.round(selectedElementData.x)}
+                          value={Math.round(selectedElementData.x * 10) / 10}
                           onChange={(e) =>
                             updateElement(selectedElementData.id, { x: parseFloat(e.target.value) || 0 })
                           }
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                          step="0.1"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Y (mm)</label>
                         <input
                           type="number"
-                          value={Math.round(selectedElementData.y)}
+                          value={Math.round(selectedElementData.y * 10) / 10}
                           onChange={(e) =>
                             updateElement(selectedElementData.id, { y: parseFloat(e.target.value) || 0 })
                           }
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                          step="0.1"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Larghezza (mm)</label>
                         <input
                           type="number"
-                          value={Math.round(selectedElementData.width)}
+                          value={Math.round(selectedElementData.width * 10) / 10}
                           onChange={(e) =>
                             updateElement(selectedElementData.id, { width: parseFloat(e.target.value) || 1 })
                           }
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                          step="0.1"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Altezza (mm)</label>
                         <input
                           type="number"
-                          value={Math.round(selectedElementData.height)}
+                          value={Math.round(selectedElementData.height * 10) / 10}
                           onChange={(e) =>
                             updateElement(selectedElementData.id, { height: parseFloat(e.target.value) || 1 })
                           }
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                          step="0.1"
                         />
                       </div>
                     </div>
+
+                    {/* Image Upload */}
+                    {selectedElementData.type === 'image' && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Immagine</label>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(selectedElementData.id, file);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <button
+                          onClick={triggerImageUpload}
+                          disabled={uploading}
+                          className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                        >
+                          <Upload size={16} />
+                          {uploading ? 'Caricamento...' : selectedElementData.image_url ? 'Cambia Immagine' : 'Carica Immagine'}
+                        </button>
+                        {selectedElementData.image_url && (
+                          <p className="mt-1 text-xs text-gray-600 truncate">
+                            {selectedElementData.content || 'Immagine caricata'}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Content */}
                     {(selectedElementData.type === 'text' || selectedElementData.type === 'field') && (
@@ -644,11 +756,25 @@ export const BadgeEditor: React.FC<BadgeEditorProps> = ({
                         </div>
                       </>
                     )}
+
+                    <div className="pt-3 border-t border-gray-300">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Z-Index (Ordine Layer)</label>
+                      <input
+                        type="number"
+                        value={selectedElementData.z_index}
+                        onChange={(e) =>
+                          updateElement(selectedElementData.id, { z_index: parseInt(e.target.value) || 0 })
+                        }
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Valori più alti appaiono sopra</p>
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
-                  <p className="text-sm">Seleziona un elemento per modificarne le proprietà</p>
+                  <p className="text-sm">Clicca su un elemento per modificarne le proprietà</p>
+                  <p className="text-xs mt-2">Puoi trascinarlo e ridimensionarlo direttamente sul canvas</p>
                 </div>
               )}
             </div>
