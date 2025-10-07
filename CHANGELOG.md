@@ -64,6 +64,37 @@ All notable changes to this project will be documented in this file.
 - **Participant Navigation**: Clickable participant names in enrollment tables
   - Click on participant name in event detail → navigate to participant detail page
 
+- **PDF Document Viewer** - Draggable/resizable modal for viewing PDFs
+  - Built with `react-pdf` and `react-rnd`
+  - Zoom in/out controls (50%-300%)
+  - Page navigation with counter
+  - Download button
+  - Maximize/restore window
+  - Local PDF.js worker (no CORS issues)
+  - Blob-based loading for better compatibility
+  - Visual feedback during loading
+
+- **DOCX Document Editor** - Full-featured word processor in the browser
+  - Rich text editor powered by Tiptap (React 19 compatible)
+  - Native DOCX creation with `docx` library (no backend conversion)
+  - Read existing DOCX files with `mammoth`
+  - Draggable/resizable modal
+  - Formatting toolbar: bold, italic, strikethrough, code
+  - Lists: bulleted and numbered
+  - Headings (H1-H6)
+  - Blockquotes
+  - Undo/redo support
+  - Character counter
+  - Download as .docx
+  - Auto .docx extension handling
+
+- **Document Management Integration**
+  - "Visualizza" (👁️) button for PDF files in DocumentManager and FolderBrowser
+  - "Modifica" (✏️) button for DOCX/DOC files
+  - "Nuovo Documento" button to create DOCX from scratch
+  - Smart file type detection (MIME type + extension)
+  - Seamless upload after editing
+
 ### Fixed
 - **Badge tab visibility issue**: Fixed enum value mismatch between backend (`RESIDENTIAL`, `FAD`, `HYBRID`) and frontend (was using Italian lowercase `residenziale`, `misto`)
 - **Event type interface alignment**: Updated Event interface to match backend enum values exactly
@@ -73,12 +104,27 @@ All notable changes to this project will be documented in this file.
 - **Empty Date Fields**: Convert empty strings to `null` for date fields to satisfy Pydantic validation
   - Affects: sponsor contract_date, valid_from, valid_to
   - Affects: patronage issue_date, expiry_date
+- **PDF.js version mismatch**: Fixed worker version mismatch between react-pdf (5.3.93) and pdfjs-dist (5.4.296)
+- **PDF.js worker MIME type**: Changed from .mjs to .js extension for proper MIME type handling
+- **react-quill incompatibility**: Replaced with Tiptap editor (React 19 compatible, no findDOMNode errors)
 
 ### Changed
 - **Document Browser Layout**: Switched from grid-based to explorer-style layout
   - Better space utilization (25% tree + 75% content)
   - Persistent folder visibility
   - Improved drag & drop workflow
+
+### Technical
+- **New Dependencies**:
+  - `react-rnd@10.4.13` - Draggable and resizable components
+  - `react-pdf@10.1.0` - PDF rendering in React
+  - `pdfjs-dist@5.3.93` - PDF.js library (via react-pdf)
+  - `@tiptap/react@2.11.4` - Headless editor framework
+  - `@tiptap/starter-kit@2.11.4` - Essential Tiptap extensions
+  - `mammoth@1.9.0` - DOCX to HTML converter
+  - `docx@9.1.0` - DOCX file creation
+- **Removed**: `react-quill` (React 19 incompatibility)
+- **Bundle size**: 555KB gzipped (acceptable for document editing features)
 
 ## [2025-10-06]
 

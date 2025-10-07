@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Upload, FileText, Trash2, Download, Tag } from 'lucide-react';
+import { Upload, FileText, Trash2, Download, Tag, Eye, Edit, FilePlus } from 'lucide-react';
 import { documentsAPI } from '../../api/documents';
 import { Document } from '../../types';
+import { DocumentViewerModal } from '../documents/DocumentViewerModal';
+import { TextEditorModal } from '../documents/TextEditorModal';
 
 interface DocumentManagerProps {
   entityType: 'event' | 'participant' | 'speaker' | 'enrollment';
@@ -14,6 +16,11 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({ entityType, en
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [tags, setTags] = useState('');
+
+  // Modal states
+  const [viewerDocument, setViewerDocument] = useState<Document | null>(null);
+  const [editorDocument, setEditorDocument] = useState<Document | null>(null);
+  const [showNewDocumentEditor, setShowNewDocumentEditor] = useState(false);
 
   useEffect(() => {
     fetchDocuments();
@@ -91,6 +98,62 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({ entityType, en
     return `${(kb / 1024).toFixed(1)} MB`;
   };
 
+  const isPDF = (mimeType?: string) => {
+    return mimeType?.includes('pdf') || false;
+  };
+
+  const isTextDocument = (mimeType?: string, fileName?: string) => {
+    if (!mimeType && !fileName) return false;
+
+    // Check by MIME type
+    if (mimeType && (
+      mimeType.includes('wordprocessingml') ||
+      mimeType.includes('msword') ||
+      mimeType.includes('application/vnd.openxmlformats-officedocument')
+    )) {
+      return true;
+    }
+
+    // Check by file extension
+    if (fileName && (fileName.endsWith('.docx') || fileName.endsWith('.doc'))) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const handleViewDocument = (doc: Document) => {
+    if (isPDF(doc.mime_type)) {
+      setViewerDocument(doc);
+    } else {
+      // For non-PDF, download
+      handleDownload(doc.file_url, doc.file_name);
+    }
+  };
+
+  const handleEditDocument = async (doc: Document) => {
+    // For text documents, we need to fetch the content first
+    // For now, we'll just open the editor - in a real scenario you'd fetch the content
+    setEditorDocument(doc);
+  };
+
+  const handleSaveNewDocument = async (file: File, fileName: string) => {
+    // Upload the file directly (it's already a DOCX File object)
+    await documentsAPI.upload(entityType, entityId, file, tags || 'documento');
+    fetchDocuments();
+  };
+
+  const handleSaveEditedDocument = async (file: File, fileName: string) => {
+    // For edited documents, we delete the old one and create a new one
+    if (editorDocument) {
+      await documentsAPI.delete(editorDocument.id);
+    }
+
+    // Upload the new version (already a DOCX File object)
+    await documentsAPI.upload(entityType, entityId, file, tags || 'documento');
+    fetchDocuments();
+  };
+
   const getFileIcon = (mimeType?: string) => {
     if (!mimeType) return <FileText size={20} />;
     
@@ -110,10 +173,19 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({ entityType, en
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Upload size={20} className="mr-2" />
-          Carica Nuovo Documento
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <Upload size={20} className="mr-2" />
+            Carica Nuovo Documento
+          </h3>
+          <button
+            onClick={() => setShowNewDocumentEditor(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+          >
+            <FilePlus size={18} />
+            <span>Nuovo Documento</span>
+          </button>
+        </div>
         
         <div className="space-y-4">
           <div>
@@ -207,6 +279,24 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({ entityType, en
                   </div>
 
                   <div className="flex items-center space-x-2 ml-4">
+                    {isPDF(doc.mime_type) && (
+                      <button
+                        onClick={() => handleViewDocument(doc)}
+                        className="p-2 text-purple-600 hover:bg-purple-50 rounded"
+                        title="Visualizza PDF"
+                      >
+                        <Eye size={18} />
+                      </button>
+                    )}
+                    {isTextDocument(doc.mime_type, doc.file_name) && (
+                      <button
+                        onClick={() => handleEditDocument(doc)}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded"
+                        title="Modifica"
+                      >
+                        <Edit size={18} />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDownload(doc.file_url, doc.file_name)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded"
@@ -228,6 +318,33 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({ entityType, en
           </div>
         )}
       </div>
+
+      {/* PDF Viewer Modal */}
+      {viewerDocument && (
+        <DocumentViewerModal
+          fileUrl={viewerDocument.file_url}
+          fileName={viewerDocument.file_name}
+          onClose={() => setViewerDocument(null)}
+        />
+      )}
+
+      {/* Text Editor Modal - New Document */}
+      {showNewDocumentEditor && (
+        <TextEditorModal
+          onClose={() => setShowNewDocumentEditor(false)}
+          onSave={handleSaveNewDocument}
+        />
+      )}
+
+      {/* Text Editor Modal - Edit Document */}
+      {editorDocument && (
+        <TextEditorModal
+          fileName={editorDocument.file_name}
+          existingDocxUrl={editorDocument.file_url}
+          onClose={() => setEditorDocument(null)}
+          onSave={handleSaveEditedDocument}
+        />
+      )}
     </div>
   );
 };
