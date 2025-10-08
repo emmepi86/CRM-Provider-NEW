@@ -105,10 +105,18 @@ export const meetingsAPI = {
   },
 
   /**
-   * Get JWT token for joining a meeting
+   * Get JWT token for joining a meeting (legacy - returns token for first meeting)
    */
   getJoinToken: async (eventId: number): Promise<JoinTokenResponse> => {
     const response = await apiClient.get(`/events/${eventId}/meeting/join-token`);
+    return response.data;
+  },
+
+  /**
+   * Get JWT token for joining a specific meeting by ID
+   */
+  getJoinTokenById: async (meetingId: number): Promise<JoinTokenResponse> => {
+    const response = await apiClient.get(`/meetings/${meetingId}/join-token`);
     return response.data;
   },
 };

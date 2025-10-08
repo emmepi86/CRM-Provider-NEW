@@ -49,7 +49,8 @@ export const UpcomingMeetingsSubTab: React.FC<UpcomingMeetingsSubTabProps> = ({ 
 
   const handleJoinMeeting = async (meeting: Meeting) => {
     try {
-      const tokenData = await meetingsAPI.getJoinToken(eventId);
+      // Get JWT token for this specific meeting
+      const tokenData = await meetingsAPI.getJoinTokenById(meeting.id);
       // Open Jitsi in new window
       const jitsiUrl = `${meeting.meeting_url}?jwt=${tokenData.token}`;
       window.open(jitsiUrl, '_blank', 'width=1280,height=720');
