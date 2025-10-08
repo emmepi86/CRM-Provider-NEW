@@ -77,6 +77,45 @@ export const EventDetail: React.FC = () => {
     }
   };
 
+  const handleCheckboxChange = (enrollmentId: number) => {
+    setSelectedEnrollmentIds(prev =>
+      prev.includes(enrollmentId)
+        ? prev.filter(id => id !== enrollmentId)
+        : [...prev, enrollmentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedEnrollmentIds.length === enrollments.length) {
+      setSelectedEnrollmentIds([]);
+    } else {
+      setSelectedEnrollmentIds(enrollments.map(e => e.id));
+    }
+  };
+
+  const handleSendEmail = (recipientEnrollments?: Enrollment[]) => {
+    const enrollmentsToEmail = recipientEnrollments ||
+      enrollments.filter(e => selectedEnrollmentIds.includes(e.id));
+
+    if (enrollmentsToEmail.length === 0) {
+      alert('Nessun destinatario selezionato');
+      return;
+    }
+
+    setShowEmailModal(true);
+  };
+
+  const getEmailRecipients = (): EmailRecipient[] => {
+    const enrollmentsToEmail = enrollments.filter(e => selectedEnrollmentIds.includes(e.id));
+    return enrollmentsToEmail
+      .filter(e => e.participant?.email)
+      .map(e => ({
+        email: e.participant!.email,
+        name: `${e.participant!.first_name} ${e.participant!.last_name}`,
+        participant_id: e.participant_id
+      }));
+  };
+
   const handleDownloadBadge = async (participantId: number, participantName: string) => {
     if (badgeTemplates.length === 0) {
       alert('Nessun template badge configurato per questo evento');
@@ -346,16 +385,32 @@ export const EventDetail: React.FC = () => {
           {activeTab === 'enrollments' && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">
-                  Iscritti ({enrollments.length})
+                <h2 className="text-xl font-semibold flex items-center space-x-2">
+                  <span>Iscritti ({enrollments.length})</span>
+                  {selectedEnrollmentIds.length > 0 && (
+                    <span className="text-sm font-normal text-gray-600">
+                      ({selectedEnrollmentIds.length} selezionati)
+                    </span>
+                  )}
                 </h2>
-                <button
-                  onClick={() => setShowEnrollModal(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
-                >
-                  <Users size={18} />
-                  <span>Aggiungi Iscritto</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  {selectedEnrollmentIds.length > 0 && (
+                    <button
+                      onClick={() => handleSendEmail()}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                    >
+                      <Mail size={18} />
+                      <span>Invia Email ({selectedEnrollmentIds.length})</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowEnrollModal(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                  >
+                    <Users size={18} />
+                    <span>Aggiungi Iscritto</span>
+                  </button>
+                </div>
               </div>
 
               {loadingEnrollments ? (
@@ -367,6 +422,14 @@ export const EventDetail: React.FC = () => {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700 w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedEnrollmentIds.length === enrollments.length && enrollments.length > 0}
+                            onChange={handleSelectAll}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                        </th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Nome</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Stato</th>
@@ -376,12 +439,21 @@ export const EventDetail: React.FC = () => {
                         {badgeTemplates.length > 0 && (
                           <th className="text-center py-3 px-4 font-semibold text-gray-700">Badge</th>
                         )}
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700 w-16">Email</th>
                         <th className="text-center py-3 px-4 font-semibold text-gray-700">Azioni</th>
                       </tr>
                     </thead>
                     <tbody>
                       {enrollments.map((enrollment) => (
                         <tr key={enrollment.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedEnrollmentIds.includes(enrollment.id)}
+                              onChange={() => handleCheckboxChange(enrollment.id)}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                          </td>
                           <td className="py-3 px-4">
                             {enrollment.participant ? (
                               <div className="flex items-center space-x-2">
@@ -444,6 +516,23 @@ export const EventDetail: React.FC = () => {
                               </button>
                             </td>
                           )}
+                          <td className="py-3 px-2 text-center">
+                            <button
+                              onClick={() => {
+                                if (!enrollment.participant?.email) {
+                                  alert('Nessun indirizzo email disponibile per questo partecipante');
+                                  return;
+                                }
+                                setSelectedEnrollmentIds([enrollment.id]);
+                                handleSendEmail();
+                              }}
+                              disabled={!enrollment.participant?.email}
+                              className="text-blue-600 hover:text-blue-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Invia email"
+                            >
+                              <Mail size={18} />
+                            </button>
+                          </td>
                           <td className="py-3 px-4 text-center">
                             <button
                               onClick={() => handleDeleteEnrollment(enrollment.id)}
@@ -506,6 +595,21 @@ export const EventDetail: React.FC = () => {
           onSuccess={() => {
             fetchEvent(event.id);
             setShowEditModal(false);
+          }}
+        />
+      )}
+
+      {showEmailModal && (
+        <SendEmailModal
+          recipients={getEmailRecipients()}
+          eventId={event.id}
+          onClose={() => {
+            setShowEmailModal(false);
+            setSelectedEnrollmentIds([]);
+          }}
+          onSuccess={() => {
+            setShowEmailModal(false);
+            setSelectedEnrollmentIds([]);
           }}
         />
       )}
