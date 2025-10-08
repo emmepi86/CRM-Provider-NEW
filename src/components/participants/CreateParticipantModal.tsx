@@ -196,16 +196,16 @@ export const CreateParticipantModal: React.FC<CreateParticipantModalProps> = ({
       const searches = [];
 
       if (formData.email) {
-        searches.push(participantsAPI.list({ search: formData.email, limit: 5 }));
+        searches.push(participantsAPI.list({ query: formData.email, page_size: 5 }));
       }
 
       if (formData.fiscal_code) {
-        searches.push(participantsAPI.list({ search: formData.fiscal_code, limit: 5 }));
+        searches.push(participantsAPI.list({ query: formData.fiscal_code, page_size: 5 }));
       }
 
       if (formData.first_name && formData.last_name) {
         searches.push(
-          participantsAPI.list({ search: `${formData.first_name} ${formData.last_name}`, limit: 5 })
+          participantsAPI.list({ query: `${formData.first_name} ${formData.last_name}`, page_size: 5 })
         );
       }
 

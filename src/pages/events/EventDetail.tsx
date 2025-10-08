@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit } from 'lucide-react';
+import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit, Download } from 'lucide-react';
 import { eventsAPI } from '../../api/events';
 import { EnrollParticipantModal } from '../../components/EnrollParticipantModal';
 import { enrollmentsAPI } from '../../api/enrollments';
+import { badgesAPI, BadgeTemplate } from '../../api/badges';
 import { SessionList } from '../../components/events/SessionList';
 import { FolderBrowser } from '../../components/events/FolderBrowser';
 import { EventSpeakers } from '../../components/events/EventSpeakers';
@@ -21,16 +22,19 @@ export const EventDetail: React.FC = () => {
   const navigate = useNavigate();
   const [event, setEvent] = useState<Event | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [badgeTemplates, setBadgeTemplates] = useState<BadgeTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('enrollments');
+  const [downloadingBadge, setDownloadingBadge] = useState<number | null>(null);
 
   useEffect(() => {
     if (id) {
       fetchEvent(parseInt(id));
       fetchEnrollments(parseInt(id));
+      fetchBadgeTemplates(parseInt(id));
     }
   }, [id]);
 
@@ -55,6 +59,47 @@ export const EventDetail: React.FC = () => {
       console.error('Errore caricamento iscritti:', error);
     } finally {
       setLoadingEnrollments(false);
+    }
+  };
+
+  const fetchBadgeTemplates = async (eventId: number) => {
+    try {
+      const data = await badgesAPI.getTemplates(eventId);
+      setBadgeTemplates(data.templates || []);
+    } catch (error) {
+      console.error('Errore caricamento template badge:', error);
+      setBadgeTemplates([]);
+    }
+  };
+
+  const handleDownloadBadge = async (participantId: number, participantName: string) => {
+    if (badgeTemplates.length === 0) {
+      alert('Nessun template badge configurato per questo evento');
+      return;
+    }
+
+    try {
+      setDownloadingBadge(participantId);
+      // Usa il primo template disponibile (o il template 'all' se disponibile)
+      const template = badgeTemplates.find(t => t.participant_type === 'all' || t.participant_type === 'participant')
+                       || badgeTemplates[0];
+
+      const blob = await badgesAPI.previewBadge(event!.id, template.id, participantId, 'front');
+
+      // Download del file
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `badge_${participantName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Errore download badge:', error);
+      alert('Errore durante il download del badge');
+    } finally {
+      setDownloadingBadge(null);
     }
   };
 
@@ -317,6 +362,9 @@ export const EventDetail: React.FC = () => {
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Pagamento</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Data Iscrizione</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Note</th>
+                        {badgeTemplates.length > 0 && (
+                          <th className="text-center py-3 px-4 font-semibold text-gray-700">Badge</th>
+                        )}
                         <th className="text-center py-3 px-4 font-semibold text-gray-700">Azioni</th>
                       </tr>
                     </thead>
@@ -356,6 +404,25 @@ export const EventDetail: React.FC = () => {
                               onUpdate={() => fetchEnrollments(event.id)}
                             />
                           </td>
+                          {badgeTemplates.length > 0 && (
+                            <td className="py-3 px-4 text-center">
+                              <button
+                                onClick={() => handleDownloadBadge(
+                                  enrollment.participant_id,
+                                  `${enrollment.participant?.first_name} ${enrollment.participant?.last_name}`
+                                )}
+                                disabled={downloadingBadge === enrollment.participant_id}
+                                className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-wait"
+                                title="Scarica badge"
+                              >
+                                {downloadingBadge === enrollment.participant_id ? (
+                                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
+                                ) : (
+                                  <Download size={18} />
+                                )}
+                              </button>
+                            </td>
+                          )}
                           <td className="py-3 px-4 text-center">
                             <button
                               onClick={() => handleDeleteEnrollment(enrollment.id)}

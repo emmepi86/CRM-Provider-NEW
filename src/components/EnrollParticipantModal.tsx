@@ -34,13 +34,13 @@ export const EnrollParticipantModal: React.FC<EnrollParticipantModalProps> = ({
   const searchParticipants = async () => {
     try {
       setLoading(true);
-      const response = await participantsAPI.list({ search: searchTerm, limit: 20 });
-      
+      const response = await participantsAPI.list({ query: searchTerm, page_size: 20 });
+
       // Filtra solo i partecipanti NON già iscritti
       const availableParticipants = response.items.filter(
         (p) => !enrolledParticipantIds.includes(p.id)
       );
-      
+
       setParticipants(availableParticipants);
     } catch (error) {
       console.error('Errore ricerca partecipanti:', error);

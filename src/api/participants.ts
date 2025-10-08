@@ -9,9 +9,11 @@ interface ParticipantsListResponse {
 }
 
 interface ParticipantsListParams {
-  search?: string;
+  query?: string; // Backend expects 'query' not 'search'
   limit?: number;
   skip?: number;
+  page?: number;
+  page_size?: number;
 }
 
 export const participantsAPI = {

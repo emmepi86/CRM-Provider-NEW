@@ -23,8 +23,8 @@ export const ParticipantList: React.FC = () => {
     try {
       setLoading(true);
       const response = await participantsAPI.list({
-        search: filters.search || undefined,
-        limit: 50,
+        query: filters.search || undefined,
+        page_size: 50,
       });
       setParticipants(response.items);
       setTotal(response.total);
