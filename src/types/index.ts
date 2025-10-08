@@ -329,6 +329,9 @@ export interface SystemSettings {
   smtp_use_ssl?: boolean;
   smtp_sender_email?: string;
   smtp_sender_name?: string;
+  jitsi_logo_url?: string;
+  jitsi_primary_color?: string;
+  jitsi_background_color?: string;
   custom_settings: Record<string, any>;
   notes?: string;
 }
@@ -348,6 +351,9 @@ export interface SystemSettingsUpdate {
   smtp_use_ssl?: boolean;
   smtp_sender_email?: string;
   smtp_sender_name?: string;
+  jitsi_logo_url?: string;
+  jitsi_primary_color?: string;
+  jitsi_background_color?: string;
   custom_settings?: Record<string, any>;
   notes?: string;
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Save, Shield, AlertCircle, Mail, TestTube } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Shield, AlertCircle, Mail, TestTube, Video } from 'lucide-react';
 import { settingsAPI } from '../../api/settings';
 import { emailsAPI } from '../../api/emails';
 import { SystemSettings, SystemSettingsUpdate } from '../../types';
@@ -48,6 +48,9 @@ export const Settings: React.FC = () => {
         smtp_use_ssl: data.smtp_use_ssl ?? false,
         smtp_sender_email: data.smtp_sender_email || '',
         smtp_sender_name: data.smtp_sender_name || '',
+        jitsi_logo_url: data.jitsi_logo_url || '',
+        jitsi_primary_color: data.jitsi_primary_color || '#007bff',
+        jitsi_background_color: data.jitsi_background_color || '#ffffff',
         notes: data.notes,
       });
     } catch (err: any) {
@@ -399,6 +402,120 @@ export const Settings: React.FC = () => {
             <TestTube size={18} />
             <span>{testingSmtp ? 'Test in corso...' : 'Test Connessione'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* Jitsi Customization */}
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
+            <Video className="text-purple-600" size={20} />
+            <h2 className="text-lg font-semibold text-gray-900">Personalizzazione Jitsi Meet</h2>
+          </div>
+          <p className="text-sm text-gray-600 mt-1">
+            Personalizza l'aspetto dei meeting virtuali con il tuo logo e i tuoi colori aziendali
+          </p>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Logo URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              URL Logo Aziendale
+            </label>
+            <input
+              type="url"
+              value={formData.jitsi_logo_url || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, jitsi_logo_url: e.target.value }))}
+              placeholder="https://example.com/logo.png"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Inserisci l'URL di un'immagine PNG o SVG. Dimensioni consigliate: 200x50px
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Primary Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Colore Primario
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  value={formData.jitsi_primary_color || '#007bff'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jitsi_primary_color: e.target.value }))}
+                  className="h-10 w-16 border border-gray-300 rounded cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={formData.jitsi_primary_color || '#007bff'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jitsi_primary_color: e.target.value }))}
+                  placeholder="#007bff"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Colore utilizzato per bottoni e elementi principali dell'interfaccia
+              </p>
+            </div>
+
+            {/* Background Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Colore Sfondo
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  value={formData.jitsi_background_color || '#ffffff'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jitsi_background_color: e.target.value }))}
+                  className="h-10 w-16 border border-gray-300 rounded cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={formData.jitsi_background_color || '#ffffff'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jitsi_background_color: e.target.value }))}
+                  placeholder="#ffffff"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Colore di sfondo principale dell'interfaccia meeting
+              </p>
+            </div>
+          </div>
+
+          {/* Preview Box */}
+          <div className="mt-6 p-4 border-2 border-gray-200 rounded-lg">
+            <p className="text-sm font-medium text-gray-700 mb-3">Anteprima Colori:</p>
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <div
+                  style={{ backgroundColor: formData.jitsi_background_color || '#ffffff' }}
+                  className="h-20 rounded-lg border-2 border-gray-200 flex items-center justify-center"
+                >
+                  <button
+                    style={{ backgroundColor: formData.jitsi_primary_color || '#007bff' }}
+                    className="px-4 py-2 text-white rounded-lg font-medium shadow"
+                  >
+                    Pulsante Esempio
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Esempio di come appariranno i colori nell'interfaccia Jitsi
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Jitsi Actions */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <p className="text-xs text-gray-600 italic">
+            ℹ️ Le modifiche ai colori e al logo si applicheranno automaticamente a tutti i nuovi meeting virtuali creati dopo il salvataggio.
+          </p>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit, Download, User, Mail } from 'lucide-react';
+import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit, Download, User, Mail, Video } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { eventsAPI } from '../../api/events';
 import { EnrollParticipantModal } from '../../components/EnrollParticipantModal';
@@ -15,9 +15,10 @@ import { PatronagesList } from '../../components/events/patronages/PatronagesLis
 import { BadgeTab } from '../../components/badges/BadgeTab';
 import { EditEventModal } from '../../components/events/EditEventModal';
 import { SendEmailModal } from '../../components/emails/SendEmailModal';
+import { MeetingTab } from '../../components/events/MeetingTab';
 import { Event, Enrollment, EmailRecipient } from '../../types';
 
-type TabType = 'enrollments' | 'sessions' | 'documents' | 'speakers' | 'sponsors' | 'patronages' | 'badges';
+type TabType = 'enrollments' | 'sessions' | 'meetings' | 'documents' | 'speakers' | 'sponsors' | 'patronages' | 'badges';
 
 export const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -326,6 +327,17 @@ export const EventDetail: React.FC = () => {
               <Clock size={18} />
               <span>Sessioni & Programma</span>
             </button>
+            <button
+              onClick={() => setActiveTab('meetings')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'meetings'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Video size={18} />
+              <span>Meeting Online</span>
+            </button>
             {canUseDocuments() && (
               <button
                 onClick={() => setActiveTab('documents')}
@@ -557,6 +569,10 @@ export const EventDetail: React.FC = () => {
 
           {activeTab === 'sessions' && (
             <SessionList eventId={event.id} />
+          )}
+
+          {activeTab === 'meetings' && (
+            <MeetingTab eventId={event.id} />
           )}
 
           {canUseDocuments() && activeTab === 'documents' && (

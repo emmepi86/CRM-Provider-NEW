@@ -1,22 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Video, Trash2, Copy, Check, ExternalLink, Clock } from 'lucide-react';
+import { Video, Trash2, Copy, Check, ExternalLink, Clock, Edit2, Film, Calendar } from 'lucide-react';
 import { meetingsAPI, Meeting } from '../../api/meetings';
 import { DraggableJitsiModal } from '../meetings/DraggableJitsiModal';
+import { RecordingsSubTab } from './RecordingsSubTab';
+import { UpcomingMeetingsSubTab } from './UpcomingMeetingsSubTab';
+import { ScheduleMeetingModal } from './ScheduleMeetingModal';
 import { useAuth } from '../../hooks/useAuth';
 
 interface MeetingTabProps {
   eventId: number;
 }
 
+type SubTab = 'upcoming' | 'active' | 'recordings';
+
 export const MeetingTab: React.FC<MeetingTabProps> = ({ eventId }) => {
   const { user } = useAuth();
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('upcoming');
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showJitsiModal, setShowJitsiModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [jwtToken, setJwtToken] = useState<string | null>(null);
   const [loadingToken, setLoadingToken] = useState(false);
 
@@ -29,11 +37,14 @@ export const MeetingTab: React.FC<MeetingTabProps> = ({ eventId }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await meetingsAPI.getByEvent(eventId);
-      setMeeting(data);
+      // Get only active/scheduled meetings (not ended)
+      const meetings = await meetingsAPI.getMeetingsList(eventId);
+
+      // Get the first active or scheduled meeting for the "Meeting Attivo" tab
+      const activeMeeting = meetings.find(m => m.status === 'active' || m.status === 'scheduled');
+      setMeeting(activeMeeting || null);
     } catch (err: any) {
       if (err.response?.status === 404) {
-        // No meeting exists yet
         setMeeting(null);
       } else {
         setError('Errore nel caricamento meeting');
@@ -44,28 +55,14 @@ export const MeetingTab: React.FC<MeetingTabProps> = ({ eventId }) => {
     }
   };
 
-  const handleCreateMeeting = async () => {
-    // Ask for meeting title
-    const title = window.prompt(
-      'Inserisci un titolo per il meeting virtuale:\n(es. "Corso ECM Cardiologia - Sessione Live")',
-      'Meeting Virtuale'
-    );
+  const handleCreateMeeting = () => {
+    // Open schedule modal instead of prompt
+    setShowScheduleModal(true);
+  };
 
-    if (!title || title.trim() === '') {
-      return; // User cancelled or entered empty title
-    }
-
-    setCreating(true);
-    setError(null);
-    try {
-      const newMeeting = await meetingsAPI.create(eventId, title.trim());
-      setMeeting(newMeeting);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Errore nella creazione meeting');
-      console.error('Error creating meeting:', err);
-    } finally {
-      setCreating(false);
-    }
+  const handleMeetingCreated = async () => {
+    // Refresh meeting data after successful creation
+    await fetchMeeting();
   };
 
   const handleDeleteMeeting = async () => {
@@ -91,6 +88,28 @@ export const MeetingTab: React.FC<MeetingTabProps> = ({ eventId }) => {
       navigator.clipboard.writeText(meeting.meeting_url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleEditTitle = async () => {
+    if (!meeting) return;
+
+    const newTitle = window.prompt('Modifica il titolo del meeting:', meeting.title);
+
+    if (!newTitle || newTitle.trim() === '' || newTitle === meeting.title) {
+      return; // User cancelled or no change
+    }
+
+    setEditingTitle(true);
+    setError(null);
+    try {
+      const updatedMeeting = await meetingsAPI.updateTitle(eventId, newTitle.trim());
+      setMeeting(updatedMeeting);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Errore nella modifica del titolo');
+      console.error('Error updating title:', err);
+    } finally {
+      setEditingTitle(false);
     }
   };
 
@@ -139,7 +158,54 @@ export const MeetingTab: React.FC<MeetingTabProps> = ({ eventId }) => {
         </div>
       )}
 
-      {!meeting ? (
+      {/* Sub-tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveSubTab('upcoming')}
+            className={`${
+              activeSubTab === 'upcoming'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Prossimi Meeting
+          </button>
+          <button
+            onClick={() => setActiveSubTab('active')}
+            className={`${
+              activeSubTab === 'active'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+          >
+            <Video className="w-4 h-4 mr-2" />
+            Meeting Attivo
+          </button>
+          <button
+            onClick={() => setActiveSubTab('recordings')}
+              className={`${
+                activeSubTab === 'recordings'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+            >
+              <Film className="w-4 h-4 mr-2" />
+              Registrazioni
+            </button>
+          </nav>
+        </div>
+
+      {/* Upcoming meetings sub-tab */}
+      {activeSubTab === 'upcoming' && (
+        <UpcomingMeetingsSubTab eventId={eventId} />
+      )}
+
+      {/* Active meeting sub-tab */}
+      {activeSubTab === 'active' && (
+        <>
+          {!meeting ? (
         // No meeting created yet
         <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12">
           <div className="text-center">
@@ -153,11 +219,10 @@ export const MeetingTab: React.FC<MeetingTabProps> = ({ eventId }) => {
             </p>
             <button
               onClick={handleCreateMeeting}
-              disabled={creating}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <Video className="w-5 h-5 mr-2" />
-              {creating ? 'Creazione...' : 'Crea Meeting Virtuale'}
+              Pianifica Meeting Virtuale
             </button>
           </div>
         </div>
@@ -168,9 +233,19 @@ export const MeetingTab: React.FC<MeetingTabProps> = ({ eventId }) => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {meeting.title}
-                </h3>
+                <div className="flex items-start space-x-3 mb-1">
+                  <h3 className="text-lg font-semibold text-gray-900 flex-1">
+                    {meeting.title}
+                  </h3>
+                  <button
+                    onClick={handleEditTitle}
+                    disabled={editingTitle}
+                    className="text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                    title="Modifica titolo"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </div>
                 <p className="text-sm text-gray-500 mb-3">Room: {meeting.room_name}</p>
                 <div className="flex items-center space-x-3">
                   {getStatusBadge(meeting.status)}
@@ -263,6 +338,22 @@ export const MeetingTab: React.FC<MeetingTabProps> = ({ eventId }) => {
             </ul>
           </div>
         </div>
+          )}
+        </>
+      )}
+
+      {/* Recordings sub-tab */}
+      {activeSubTab === 'recordings' && (
+        <RecordingsSubTab eventId={eventId} />
+      )}
+
+      {/* Schedule Meeting Modal */}
+      {showScheduleModal && (
+        <ScheduleMeetingModal
+          eventId={eventId}
+          onClose={() => setShowScheduleModal(false)}
+          onSuccess={handleMeetingCreated}
+        />
       )}
 
       {/* Draggable Jitsi Modal */}
