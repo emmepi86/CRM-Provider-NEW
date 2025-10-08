@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Mail, Send, AlertCircle } from 'lucide-react';
 import { emailsAPI } from '../../api/emails';
 import { EmailRecipient, EmailTemplate } from '../../types';
+import { TinyMCEEditor } from '../common/TinyMCEEditor';
 
 interface SendEmailModalProps {
   recipients: EmailRecipient[];
@@ -149,18 +150,20 @@ export const SendEmailModal: React.FC<SendEmailModalProps> = ({
 
             {/* Body HTML */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Messaggio *
               </label>
-              <textarea
-                value={bodyHtml}
-                onChange={(e) => setBodyHtml(e.target.value)}
-                rows={12}
-                placeholder="Corpo del messaggio (HTML supportato)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-              />
+              <div className="border border-gray-300 rounded-md overflow-hidden">
+                <TinyMCEEditor
+                  value={bodyHtml}
+                  onChange={setBodyHtml}
+                  height={350}
+                  placeholder="Scrivi il messaggio dell'email..."
+                  mode="email"
+                />
+              </div>
               <p className="text-xs text-gray-500 mt-1">
-                Supporta HTML. Variabili disponibili: {'{first_name}'}, {'{last_name}'}, {'{full_name}'}, {'{email}'}, {'{event_title}'}, {'{event_start_date}'}
+                Variabili disponibili: {'{first_name}'}, {'{last_name}'}, {'{full_name}'}, {'{email}'}, {'{event_title}'}, {'{event_start_date}'}
               </p>
             </div>
 
