@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Calendar, Clock, FileText } from 'lucide-react';
+import { meetingsAPI } from '../../api/meetings';
 
 interface ScheduleMeetingModalProps {
   eventId: number;
@@ -47,28 +48,16 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
       // Combine date and time into ISO datetime
       const scheduledAt = `${formData.scheduled_date}T${formData.scheduled_time}:00`;
 
-      const response = await fetch(`/api/v1/events/${eventId}/meeting`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          title: formData.title.trim(),
-          description: formData.description.trim() || null,
-          scheduled_at: scheduledAt,
-        }),
+      await meetingsAPI.create(eventId, {
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        scheduled_at: scheduledAt,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Errore nella creazione del meeting');
-      }
 
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Errore nella creazione del meeting');
+      setError(err.response?.data?.detail || err.message || 'Errore nella creazione del meeting');
     } finally {
       setSubmitting(false);
     }
