@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Save, Shield, AlertCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Shield, AlertCircle, Mail, TestTube } from 'lucide-react';
 import { settingsAPI } from '../../api/settings';
+import { emailsAPI } from '../../api/emails';
 import { SystemSettings, SystemSettingsUpdate } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { isSuperadmin } = useAuth();
+  const { isSuperadmin, user } = useAuth();
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [formData, setFormData] = useState<SystemSettingsUpdate>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [testingSmtp, setTestingSmtp] = useState(false);
+  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     // Redirect if not superadmin
@@ -37,6 +40,14 @@ export const Settings: React.FC = () => {
         patronages_enabled: data.patronages_enabled,
         documents_enabled: data.documents_enabled,
         webhooks_enabled: data.webhooks_enabled,
+        smtp_host: data.smtp_host || '',
+        smtp_port: data.smtp_port || 587,
+        smtp_username: data.smtp_username || '',
+        smtp_password: data.smtp_password || '',
+        smtp_use_tls: data.smtp_use_tls ?? true,
+        smtp_use_ssl: data.smtp_use_ssl ?? false,
+        smtp_sender_email: data.smtp_sender_email || '',
+        smtp_sender_name: data.smtp_sender_name || '',
         notes: data.notes,
       });
     } catch (err: any) {
@@ -44,6 +55,32 @@ export const Settings: React.FC = () => {
       setError('Errore nel caricamento delle impostazioni');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestSmtp = async () => {
+    if (!user?.email) {
+      setSmtpTestResult({ success: false, message: 'Email utente non trovata' });
+      return;
+    }
+
+    try {
+      setTestingSmtp(true);
+      setSmtpTestResult(null);
+
+      // Save current settings first
+      await settingsAPI.updateSettings(formData);
+
+      // Test SMTP
+      const result = await emailsAPI.testSMTP(user.email);
+      setSmtpTestResult(result);
+    } catch (err: any) {
+      setSmtpTestResult({
+        success: false,
+        message: err.response?.data?.detail || 'Errore durante il test SMTP'
+      });
+    } finally {
+      setTestingSmtp(false);
     }
   };
 
@@ -215,6 +252,152 @@ export const Settings: React.FC = () => {
           >
             <Save size={18} />
             <span>{saving ? 'Salvataggio...' : 'Salva Modifiche'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* SMTP Configuration */}
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <div className="flex items-center space-x-2">
+              <Mail className="text-blue-600" size={20} />
+              <h2 className="text-lg font-semibold text-gray-900">Configurazione SMTP</h2>
+            </div>
+            <p className="text-sm text-gray-600 mt-1">
+              Configura il server SMTP per l'invio di email dal sistema
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* SMTP Host */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Host SMTP
+              </label>
+              <input
+                type="text"
+                value={formData.smtp_host || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, smtp_host: e.target.value }))}
+                placeholder="smtp.gmail.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* SMTP Port */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Porta
+              </label>
+              <input
+                type="number"
+                value={formData.smtp_port || 587}
+                onChange={(e) => setFormData(prev => ({ ...prev, smtp_port: parseInt(e.target.value) }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* SMTP Username */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Username
+              </label>
+              <input
+                type="text"
+                value={formData.smtp_username || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, smtp_username: e.target.value }))}
+                placeholder="user@example.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* SMTP Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                value={formData.smtp_password || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, smtp_password: e.target.value }))}
+                placeholder="••••••••"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Sender Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Mittente
+              </label>
+              <input
+                type="email"
+                value={formData.smtp_sender_email || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, smtp_sender_email: e.target.value }))}
+                placeholder="noreply@example.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Sender Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nome Mittente
+              </label>
+              <input
+                type="text"
+                value={formData.smtp_sender_name || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, smtp_sender_name: e.target.value }))}
+                placeholder="CRM ECM"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* TLS/SSL Options */}
+          <div className="flex items-center space-x-6 pt-2">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.smtp_use_tls ?? true}
+                onChange={(e) => setFormData(prev => ({ ...prev, smtp_use_tls: e.target.checked }))}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-700">Usa TLS</span>
+            </label>
+
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.smtp_use_ssl ?? false}
+                onChange={(e) => setFormData(prev => ({ ...prev, smtp_use_ssl: e.target.checked }))}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-700">Usa SSL</span>
+            </label>
+          </div>
+
+          {/* Test SMTP Result */}
+          {smtpTestResult && (
+            <div className={`p-3 rounded-lg ${smtpTestResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+              <p className={`text-sm ${smtpTestResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                {smtpTestResult.message}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* SMTP Actions */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+          <button
+            onClick={handleTestSmtp}
+            disabled={testingSmtp || !formData.smtp_host}
+            className="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            <TestTube size={18} />
+            <span>{testingSmtp ? 'Test in corso...' : 'Test Connessione'}</span>
           </button>
         </div>
       </div>

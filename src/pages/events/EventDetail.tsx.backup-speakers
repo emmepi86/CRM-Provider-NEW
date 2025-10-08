@@ -1,45 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit, Download, User, Mail } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText } from 'lucide-react';
 import { eventsAPI } from '../../api/events';
 import { EnrollParticipantModal } from '../../components/EnrollParticipantModal';
 import { enrollmentsAPI } from '../../api/enrollments';
-import { badgesAPI, BadgeTemplate } from '../../api/badges';
 import { SessionList } from '../../components/events/SessionList';
 import { FolderBrowser } from '../../components/events/FolderBrowser';
-import { EventSpeakers } from '../../components/events/EventSpeakers';
-import { EnrollmentNotesEdit } from '../../components/enrollments/EnrollmentNotesEdit';
-import { SponsorsList } from '../../components/events/sponsors/SponsorsList';
-import { PatronagesList } from '../../components/events/patronages/PatronagesList';
-import { BadgeTab } from '../../components/badges/BadgeTab';
-import { EditEventModal } from '../../components/events/EditEventModal';
-import { SendEmailModal } from '../../components/emails/SendEmailModal';
-import { Event, Enrollment, EmailRecipient } from '../../types';
+import { Event, Enrollment } from '../../types';
 
-type TabType = 'enrollments' | 'sessions' | 'documents' | 'speakers' | 'sponsors' | 'patronages' | 'badges';
+type TabType = 'enrollments' | 'sessions' | 'documents';
 
 export const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { canUseBadges, canUseSponsors, canUsePatronages, canUseDocuments } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [badgeTemplates, setBadgeTemplates] = useState<BadgeTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('enrollments');
-  const [downloadingBadge, setDownloadingBadge] = useState<number | null>(null);
-  const [selectedEnrollmentIds, setSelectedEnrollmentIds] = useState<number[]>([]);
-  const [showEmailModal, setShowEmailModal] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchEvent(parseInt(id));
       fetchEnrollments(parseInt(id));
-      fetchBadgeTemplates(parseInt(id));
     }
   }, [id]);
 
@@ -64,47 +48,6 @@ export const EventDetail: React.FC = () => {
       console.error('Errore caricamento iscritti:', error);
     } finally {
       setLoadingEnrollments(false);
-    }
-  };
-
-  const fetchBadgeTemplates = async (eventId: number) => {
-    try {
-      const data = await badgesAPI.getTemplates(eventId);
-      setBadgeTemplates(data.templates || []);
-    } catch (error) {
-      console.error('Errore caricamento template badge:', error);
-      setBadgeTemplates([]);
-    }
-  };
-
-  const handleDownloadBadge = async (participantId: number, participantName: string) => {
-    if (badgeTemplates.length === 0) {
-      alert('Nessun template badge configurato per questo evento');
-      return;
-    }
-
-    try {
-      setDownloadingBadge(participantId);
-      // Usa il primo template disponibile (o il template 'all' se disponibile)
-      const template = badgeTemplates.find(t => t.participant_type === 'all' || t.participant_type === 'participant')
-                       || badgeTemplates[0];
-
-      const blob = await badgesAPI.previewBadge(event!.id, template.id, participantId, 'front');
-
-      // Download del file
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `badge_${participantName.replace(/\s+/g, '_')}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Errore download badge:', error);
-      alert('Errore durante il download del badge');
-    } finally {
-      setDownloadingBadge(null);
     }
   };
 
@@ -169,21 +112,6 @@ export const EventDetail: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
         </div>
         <div className="flex items-center space-x-2">
-          {!event.moodle_course_id && (
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-              title="Modifica Evento"
-            >
-              <Edit size={18} />
-              <span>Modifica</span>
-            </button>
-          )}
-          {event.moodle_course_id && (
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600" title="Evento sincronizzato da Moodle (readonly)">
-              Sincronizzato da Moodle
-            </span>
-          )}
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeBadge(event.event_type)}`}>
             {event.event_type === 'ecm' ? 'ECM' : 'Non-ECM'}
           </span>
@@ -266,17 +194,6 @@ export const EventDetail: React.FC = () => {
               <span>Iscritti ({enrollments.length})</span>
             </button>
             <button
-              onClick={() => setActiveTab('speakers')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                activeTab === 'speakers'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Mic size={18} />
-              <span>Relatori</span>
-            </button>
-            <button
               onClick={() => setActiveTab('sessions')}
               className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
                 activeTab === 'sessions'
@@ -287,58 +204,17 @@ export const EventDetail: React.FC = () => {
               <Clock size={18} />
               <span>Sessioni & Programma</span>
             </button>
-            {canUseDocuments() && (
-              <button
-                onClick={() => setActiveTab('documents')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                  activeTab === 'documents'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FileText size={18} />
-                <span>Documenti</span>
-              </button>
-            )}
-            {canUseSponsors() && (
-              <button
-                onClick={() => setActiveTab('sponsors')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                  activeTab === 'sponsors'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Building2 size={18} />
-                <span>Sponsor</span>
-              </button>
-            )}
-            {canUsePatronages() && (
-              <button
-                onClick={() => setActiveTab('patronages')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                  activeTab === 'patronages'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Trophy size={18} />
-                <span>Patrocini</span>
-              </button>
-            )}
-            {canUseBadges() && (event.delivery_mode === 'RESIDENTIAL' || event.delivery_mode === 'HYBRID') && (
-              <button
-                onClick={() => setActiveTab('badges')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                  activeTab === 'badges'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Clipboard size={18} />
-                <span>Badge</span>
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('documents')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'documents'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText size={18} />
+              <span>Documenti</span>
+            </button>
           </nav>
         </div>
 
@@ -349,8 +225,8 @@ export const EventDetail: React.FC = () => {
                 <h2 className="text-xl font-semibold">
                   Iscritti ({enrollments.length})
                 </h2>
-                <button
-                  onClick={() => setShowEnrollModal(true)}
+                <button 
+                  onClick={() => setShowEnrollModal(true)} 
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
                 >
                   <Users size={18} />
@@ -372,10 +248,6 @@ export const EventDetail: React.FC = () => {
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Stato</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Pagamento</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Data Iscrizione</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Note</th>
-                        {badgeTemplates.length > 0 && (
-                          <th className="text-center py-3 px-4 font-semibold text-gray-700">Badge</th>
-                        )}
                         <th className="text-center py-3 px-4 font-semibold text-gray-700">Azioni</th>
                       </tr>
                     </thead>
@@ -383,24 +255,9 @@ export const EventDetail: React.FC = () => {
                       {enrollments.map((enrollment) => (
                         <tr key={enrollment.id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-4">
-                            {enrollment.participant ? (
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => navigate(`/ecm/${enrollment.id}`, { state: { eventId: event.id, eventTitle: event.title } })}
-                                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-left"
-                                  title="Visualizza percorso ECM"
-                                >
-                                  {`${enrollment.participant.first_name} ${enrollment.participant.last_name}`}
-                                </button>
-                                <button
-                                  onClick={() => navigate(`/participants/${enrollment.participant_id}`)}
-                                  className="text-gray-500 hover:text-gray-700"
-                                  title="Visualizza anagrafica completa"
-                                >
-                                  <User size={16} />
-                                </button>
-                              </div>
-                            ) : 'N/A'}
+                            {enrollment.participant ?
+                              `${enrollment.participant.first_name} ${enrollment.participant.last_name}`
+                              : 'N/A'}
                           </td>
                           <td className="py-3 px-4">
                             {enrollment.participant?.email || 'N/A'}
@@ -418,32 +275,6 @@ export const EventDetail: React.FC = () => {
                           <td className="py-3 px-4">
                             {new Date(enrollment.enrollment_date).toLocaleDateString('it-IT')}
                           </td>
-                          <td className="py-3 px-4">
-                            <EnrollmentNotesEdit
-                              enrollmentId={enrollment.id}
-                              currentNotes={enrollment.notes}
-                              onUpdate={() => fetchEnrollments(event.id)}
-                            />
-                          </td>
-                          {badgeTemplates.length > 0 && (
-                            <td className="py-3 px-4 text-center">
-                              <button
-                                onClick={() => handleDownloadBadge(
-                                  enrollment.participant_id,
-                                  `${enrollment.participant?.first_name} ${enrollment.participant?.last_name}`
-                                )}
-                                disabled={downloadingBadge === enrollment.participant_id}
-                                className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-wait"
-                                title="Scarica badge"
-                              >
-                                {downloadingBadge === enrollment.participant_id ? (
-                                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
-                                ) : (
-                                  <Download size={18} />
-                                )}
-                              </button>
-                            </td>
-                          )}
                           <td className="py-3 px-4 text-center">
                             <button
                               onClick={() => handleDeleteEnrollment(enrollment.id)}
@@ -462,28 +293,12 @@ export const EventDetail: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'speakers' && (
-            <EventSpeakers eventId={event.id} />
-          )}
-
           {activeTab === 'sessions' && (
             <SessionList eventId={event.id} />
           )}
 
-          {canUseDocuments() && activeTab === 'documents' && (
+          {activeTab === 'documents' && (
             <FolderBrowser entityType="event" entityId={event.id} />
-          )}
-
-          {canUseSponsors() && activeTab === 'sponsors' && (
-            <SponsorsList eventId={event.id} />
-          )}
-
-          {canUsePatronages() && activeTab === 'patronages' && (
-            <PatronagesList eventId={event.id} />
-          )}
-
-          {canUseBadges() && activeTab === 'badges' && (
-            <BadgeTab eventId={event.id} deliveryMode={event.delivery_mode || 'RESIDENTIAL'} />
           )}
         </div>
       </div>
@@ -495,17 +310,6 @@ export const EventDetail: React.FC = () => {
           onClose={() => setShowEnrollModal(false)}
           onSuccess={() => {
             fetchEnrollments(event.id);
-          }}
-        />
-      )}
-
-      {showEditModal && (
-        <EditEventModal
-          event={event}
-          onClose={() => setShowEditModal(false)}
-          onSuccess={() => {
-            fetchEvent(event.id);
-            setShowEditModal(false);
           }}
         />
       )}
