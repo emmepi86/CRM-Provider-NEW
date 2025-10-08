@@ -134,6 +134,15 @@ export const badgesAPI = {
     return data;
   },
 
+  // Download single badge
+  downloadSingleBadge: async (eventId: number, enrollmentId: number, templateId: number): Promise<Blob> => {
+    const { data } = await apiClient.get(
+      `/events/${eventId}/badges/download/${enrollmentId}?template_id=${templateId}`,
+      { responseType: 'blob' }
+    );
+    return data;
+  },
+
   // Preview badge
   previewBadge: async (
     eventId: number,

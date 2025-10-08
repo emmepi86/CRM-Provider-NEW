@@ -9,8 +9,10 @@ import { ParticipantDetail } from './pages/participants/ParticipantDetail';
 import ECMProgress from './pages/participants/ECMProgress';
 import { SpeakerList } from './pages/speakers/SpeakerList';
 import { SpeakerDetail } from './pages/speakers/SpeakerDetail';
+import { UserList } from './pages/users/UserList';
 import { SyncDashboard } from './pages/sync/SyncDashboard';
 import { WebhookDashboard } from './pages/webhooks/WebhookDashboard';
+import { Settings } from './pages/settings/Settings';
 import { Layout } from './components/layout/Layout';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -93,6 +95,15 @@ function App() {
         />
 
         <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <UserList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/ecm/:enrollmentId"
           element={
             <ProtectedRoute>
@@ -115,6 +126,15 @@ function App() {
           element={
             <ProtectedRoute>
               <WebhookDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           }
         />

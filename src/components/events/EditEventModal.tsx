@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { eventsAPI, EventUpdate } from '../../api/events';
 import { Event } from '../../types';
@@ -78,6 +78,74 @@ export const EditEventModal: React.FC<EditEventModalProps> = ({ event, onClose, 
   const [expandedSections, setExpandedSections] = useState<Set<Section>>(new Set(['basic'] as Section[]));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Popola il form con i dati dell'evento quando la modal viene aperta
+  useEffect(() => {
+    if (event) {
+      setFormData({
+        title: event.title || '',
+        event_type: event.event_type || 'non_ecm',
+        start_date: event.start_date || '',
+        end_date: event.end_date || '',
+        location: event.location || '',
+        max_participants: event.max_participants,
+        delivery_mode: event.delivery_mode,
+        event_format: event.event_format,
+        status: event.status || 'draft',
+        internal_notes: event.internal_notes || '',
+
+        // ECM fields
+        ecm_code: event.ecm_code || '',
+        ecm_credits: event.ecm_credits || '',
+        ecm_provider_code: event.ecm_provider_code || '',
+        objective_id: event.objective_id || '',
+        ecm_hours: event.ecm_hours,
+        accreditation_type: event.accreditation_type,
+        provider_type: event.provider_type || '',
+        scientific_responsible: event.scientific_responsible || '',
+
+        // Sessions
+        has_modules: event.has_modules || false,
+        module_count: event.module_count,
+
+        // FAD
+        fad_platform: event.fad_platform || '',
+        fad_url: event.fad_url || '',
+        fad_start_date: event.fad_start_date || '',
+        fad_end_date: event.fad_end_date || '',
+        fad_max_attempts: event.fad_max_attempts || 5,
+
+        // Residential
+        venue_name: event.venue_name || '',
+        venue_address: event.venue_address || '',
+        venue_city: event.venue_city || '',
+        venue_capacity: event.venue_capacity,
+        catering_included: event.catering_included || false,
+        parking_available: event.parking_available || false,
+
+        // Hybrid
+        online_slots: event.online_slots,
+        onsite_slots: event.onsite_slots,
+
+        // Pricing
+        base_price: event.base_price,
+        early_bird_price: event.early_bird_price,
+        early_bird_deadline: event.early_bird_deadline || '',
+        vat_rate: event.vat_rate || 22.0,
+        payment_methods: event.payment_methods || [],
+
+        // Registration
+        registration_deadline: event.registration_deadline || '',
+        event_url: event.event_url || '',
+
+        // Documents
+        program_pdf: event.program_pdf || '',
+        brochure_pdf: event.brochure_pdf || '',
+        materials_available: event.materials_available || false,
+        materials_url: event.materials_url || '',
+      });
+    }
+  }, [event]);
 
   const toggleSection = (section: Section) => {
     setExpandedSections(prev => {

@@ -9,9 +9,12 @@ import {
   Webhook,
   LogOut,
   Menu,
-  X
+  X,
+  Settings as SettingsIcon,
+  Shield
 } from 'lucide-react';
 import { authAPI } from '../../api/auth';
+import { useAuth } from '../../hooks/useAuth';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -21,19 +24,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  // Gestione sicura del parsing JSON
-  const getUserFromStorage = () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return { email: 'Utente' };
-      return JSON.parse(userStr);
-    } catch {
-      return { email: 'Utente' };
-    }
-  };
-
-  const user = getUserFromStorage();
+  const { user, isSuperadmin, isAdmin, canUseMoodleSync, canUseWebhooks } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -47,12 +38,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const menuItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/events', icon: Calendar, label: 'Eventi' },
-    { path: '/participants', icon: Users, label: 'Partecipanti' },
-    { path: '/speakers', icon: Mic, label: 'Relatori' },
-    { path: '/sync', icon: RefreshCw, label: 'Sync Moodle' },
-    { path: '/webhooks', icon: Webhook, label: 'Webhooks' },
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', show: true },
+    { path: '/events', icon: Calendar, label: 'Eventi', show: true },
+    { path: '/participants', icon: Users, label: 'Partecipanti', show: true },
+    { path: '/speakers', icon: Mic, label: 'Relatori', show: true },
+    { path: '/users', icon: Shield, label: 'Gestione Utenti', show: isAdmin() },
+    { path: '/sync', icon: RefreshCw, label: 'Sync Moodle', show: isAdmin() && canUseMoodleSync() },
+    { path: '/webhooks', icon: Webhook, label: 'Webhooks', show: isAdmin() && canUseWebhooks() },
+    { path: '/settings', icon: SettingsIcon, label: 'Impostazioni', show: isSuperadmin() },
   ];
 
   return (
@@ -76,7 +69,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          {menuItems.map((item) => {
+          {menuItems.filter(item => item.show).map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
 
@@ -105,9 +98,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <LogOut size={20} />
             {sidebarOpen && <span>Logout</span>}
           </button>
-          {sidebarOpen && (
+          {sidebarOpen && user && (
             <div className="mt-4 px-4">
               <p className="text-sm text-gray-600">{user.email}</p>
+              {(isSuperadmin() || isAdmin()) && (
+                <div className="flex items-center space-x-1 mt-1">
+                  <Shield size={12} className="text-purple-600" />
+                  <p className="text-xs text-purple-600 font-medium">
+                    {isSuperadmin() ? 'Superadmin' : 'Admin'}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

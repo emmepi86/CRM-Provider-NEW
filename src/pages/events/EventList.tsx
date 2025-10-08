@@ -184,9 +184,9 @@ export const EventList: React.FC = () => {
                   <span className="font-medium">Luogo:</span> {event.location}
                 </p>
               )}
-              {event.credits && (
+              {event.ecm_credits && (
                 <p>
-                  <span className="font-medium">Crediti:</span> {event.credits} ECM
+                  <span className="font-medium">Crediti:</span> {event.ecm_credits} ECM
                 </p>
               )}
             </div>

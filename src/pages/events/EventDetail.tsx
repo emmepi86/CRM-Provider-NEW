@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit, Download } from 'lucide-react';
+import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit, Download, User } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import { eventsAPI } from '../../api/events';
 import { EnrollParticipantModal } from '../../components/EnrollParticipantModal';
 import { enrollmentsAPI } from '../../api/enrollments';
@@ -20,6 +21,7 @@ type TabType = 'enrollments' | 'sessions' | 'documents' | 'speakers' | 'sponsors
 export const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { canUseBadges, canUseSponsors, canUsePatronages, canUseDocuments } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [badgeTemplates, setBadgeTemplates] = useState<BadgeTemplate[]>([]);
@@ -282,40 +284,46 @@ export const EventDetail: React.FC = () => {
               <Clock size={18} />
               <span>Sessioni & Programma</span>
             </button>
-            <button
-              onClick={() => setActiveTab('documents')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                activeTab === 'documents'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <FileText size={18} />
-              <span>Documenti</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('sponsors')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                activeTab === 'sponsors'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Building2 size={18} />
-              <span>Sponsor</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('patronages')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                activeTab === 'patronages'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Trophy size={18} />
-              <span>Patrocini</span>
-            </button>
-            {(event.delivery_mode === 'RESIDENTIAL' || event.delivery_mode === 'HYBRID') && (
+            {canUseDocuments() && (
+              <button
+                onClick={() => setActiveTab('documents')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === 'documents'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <FileText size={18} />
+                <span>Documenti</span>
+              </button>
+            )}
+            {canUseSponsors() && (
+              <button
+                onClick={() => setActiveTab('sponsors')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === 'sponsors'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Building2 size={18} />
+                <span>Sponsor</span>
+              </button>
+            )}
+            {canUsePatronages() && (
+              <button
+                onClick={() => setActiveTab('patronages')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === 'patronages'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Trophy size={18} />
+                <span>Patrocini</span>
+              </button>
+            )}
+            {canUseBadges() && (event.delivery_mode === 'RESIDENTIAL' || event.delivery_mode === 'HYBRID') && (
               <button
                 onClick={() => setActiveTab('badges')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
@@ -373,12 +381,22 @@ export const EventDetail: React.FC = () => {
                         <tr key={enrollment.id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-4">
                             {enrollment.participant ? (
-                              <button
-                                onClick={() => navigate(`/participants/${enrollment.participant_id}`)}
-                                className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-left"
-                              >
-                                {`${enrollment.participant.first_name} ${enrollment.participant.last_name}`}
-                              </button>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => navigate(`/ecm/${enrollment.id}`, { state: { eventId: event.id, eventTitle: event.title } })}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-left"
+                                  title="Visualizza percorso ECM"
+                                >
+                                  {`${enrollment.participant.first_name} ${enrollment.participant.last_name}`}
+                                </button>
+                                <button
+                                  onClick={() => navigate(`/participants/${enrollment.participant_id}`)}
+                                  className="text-gray-500 hover:text-gray-700"
+                                  title="Visualizza anagrafica completa"
+                                >
+                                  <User size={16} />
+                                </button>
+                              </div>
                             ) : 'N/A'}
                           </td>
                           <td className="py-3 px-4">
@@ -449,19 +467,19 @@ export const EventDetail: React.FC = () => {
             <SessionList eventId={event.id} />
           )}
 
-          {activeTab === 'documents' && (
+          {canUseDocuments() && activeTab === 'documents' && (
             <FolderBrowser entityType="event" entityId={event.id} />
           )}
 
-          {activeTab === 'sponsors' && (
+          {canUseSponsors() && activeTab === 'sponsors' && (
             <SponsorsList eventId={event.id} />
           )}
 
-          {activeTab === 'patronages' && (
+          {canUsePatronages() && activeTab === 'patronages' && (
             <PatronagesList eventId={event.id} />
           )}
 
-          {activeTab === 'badges' && (
+          {canUseBadges() && activeTab === 'badges' && (
             <BadgeTab eventId={event.id} deliveryMode={event.delivery_mode || 'RESIDENTIAL'} />
           )}
         </div>

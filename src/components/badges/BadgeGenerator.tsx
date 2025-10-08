@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { badgesAPI, BadgeTemplate } from '../../api/badges';
 import { enrollmentsAPI } from '../../api/enrollments';
 import { Enrollment } from '../../types';
-import { X, Download, Users, CheckSquare, Square, Search } from 'lucide-react';
+import { X, Download, Users, CheckSquare, Square, Search, FileArchive } from 'lucide-react';
 
 interface BadgeGeneratorProps {
   eventId: number;
@@ -60,7 +60,7 @@ export const BadgeGenerator: React.FC<BadgeGeneratorProps> = ({ eventId, templat
     );
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (format: 'pdf' | 'zip' = 'pdf') => {
     if (selectedIds.length === 0) {
       alert('Seleziona almeno un partecipante');
       return;
@@ -69,30 +69,32 @@ export const BadgeGenerator: React.FC<BadgeGeneratorProps> = ({ eventId, templat
     try {
       setGenerating(true);
 
-      // Note: This will fail until PDF generation is implemented on backend
       const blob = await badgesAPI.generateBadges(eventId, {
         template_id: template.id,
         participant_ids: selectedIds,
         include_speakers: includeSpeakers,
-        format: 'pdf',
+        format: format,
         double_sided: template.is_double_sided,
       });
 
-      // Download the generated PDF
+      // Download the generated file
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `badges_${template.name.replace(/\s/g, '_')}.pdf`;
+      const extension = format === 'zip' ? 'zip' : 'pdf';
+      const timestamp = new Date().toISOString().slice(0, 10);
+      a.download = `badges_${template.name.replace(/\s/g, '_')}_${timestamp}.${extension}`;
       a.click();
       window.URL.revokeObjectURL(url);
 
+      alert(`${format === 'zip' ? 'File ZIP' : 'PDF'} generato con successo!`);
       onClose();
     } catch (error: any) {
       console.error('Error generating badges:', error);
       if (error.response?.status === 501) {
         alert('La generazione PDF dei badge sarà disponibile a breve!');
       } else {
-        alert('Errore durante la generazione dei badge');
+        alert(`Errore durante la generazione ${format === 'zip' ? 'dello ZIP' : 'del PDF'}`);
       }
     } finally {
       setGenerating(false);
@@ -135,12 +137,23 @@ export const BadgeGenerator: React.FC<BadgeGeneratorProps> = ({ eventId, templat
               </button>
 
               <button
-                onClick={handleGenerate}
+                onClick={() => handleGenerate('zip')}
+                disabled={generating || selectedIds.length === 0}
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+                title="Scarica badge individuali in ZIP (1 PDF per partecipante)"
+              >
+                <FileArchive size={20} />
+                {generating ? 'Generazione...' : `ZIP Individuale (${selectedIds.length})`}
+              </button>
+
+              <button
+                onClick={() => handleGenerate('pdf')}
                 disabled={generating || selectedIds.length === 0}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                title="Scarica PDF unico con tutti i badge pronti per la stampa"
               >
                 <Download size={20} />
-                {generating ? 'Generazione...' : `Genera PDF (${selectedIds.length})`}
+                {generating ? 'Generazione...' : `PDF Stampa (${selectedIds.length})`}
               </button>
             </div>
           </div>

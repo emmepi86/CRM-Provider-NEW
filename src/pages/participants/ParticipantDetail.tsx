@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   User, Mail, Phone, MapPin, Briefcase, Calendar,
-  ArrowLeft, FileText, Award, Building, Plane, Hotel, Utensils
+  ArrowLeft, FileText, Award, Building, Plane, Hotel, Utensils, FolderOpen
 } from 'lucide-react';
 import { participantsAPI } from '../../api/participants';
 import { enrollmentsAPI } from '../../api/enrollments';
 import { ParticipantNotesEdit } from '../../components/participants/ParticipantNotesEdit';
+import { DocumentHistory } from '../../components/participants/DocumentHistory';
 import { Participant, Enrollment } from '../../types';
 
 export const ParticipantDetail: React.FC = () => {
@@ -463,6 +464,18 @@ export const ParticipantDetail: React.FC = () => {
             Nessuna iscrizione trovata
           </div>
         )}
+      </div>
+
+      {/* Storico Documenti */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <FolderOpen size={20} />
+          <span>Storico Documenti per Evento</span>
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Documenti amministrativi caricati per le iscrizioni del partecipante
+        </p>
+        <DocumentHistory enrollments={enrollments} />
       </div>
 
       {/* Note Globali */}

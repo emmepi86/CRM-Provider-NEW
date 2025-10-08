@@ -1,8 +1,14 @@
+export type UserRole = 'superadmin' | 'admin' | 'operator' | 'viewer';
+
 export interface User {
   id: number;
   email: string;
   full_name: string;
+  first_name: string;
+  last_name: string;
+  role: UserRole;
   is_active: boolean;
+  active: boolean;
   tenant_id: number;
 }
 
@@ -21,21 +27,71 @@ export interface LoginResponse {
 export interface Event {
   id: number;
   title: string;
-  event_type: 'ecm' | 'non_ecm';
-  status: 'draft' | 'published' | 'cancelled' | 'completed';
-  delivery_mode?: 'RESIDENTIAL' | 'FAD' | 'HYBRID' | 'WEBINAR';
+  event_type: 'ecm' | 'non_ecm' | 'congress';
+  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled';
   start_date: string;
   end_date: string;
   location?: string;
   max_participants?: number;
-  credits?: number;
-  ecm_code?: string;
-  ecm_credits?: string;
-  ecm_provider_code?: string;
   internal_notes?: string;
   moodle_course_id?: number;
   created_at: string;
   updated_at: string;
+
+  // Event format
+  delivery_mode?: 'RESIDENTIAL' | 'FAD' | 'HYBRID' | 'WEBINAR';
+  event_format?: 'CORSO' | 'CONGRESSO' | 'CONVEGNO' | 'WORKSHOP' | 'SEMINARIO';
+
+  // ECM fields
+  ecm_code?: string;
+  ecm_credits?: string;
+  ecm_provider_code?: string;
+  objective_id?: string;
+  target_professions?: Array<{ professione: string; discipline: string[] }>;
+  ecm_hours?: number;
+  accreditation_type?: 'RES' | 'FAD' | 'FSC';
+  provider_type?: string;
+  scientific_responsible?: string;
+
+  // Sessions/modules
+  has_modules?: boolean;
+  module_count?: number;
+
+  // FAD specific
+  fad_platform?: string;
+  fad_url?: string;
+  fad_start_date?: string;
+  fad_end_date?: string;
+  fad_max_attempts?: number;
+
+  // Residential specific
+  venue_name?: string;
+  venue_address?: string;
+  venue_city?: string;
+  venue_capacity?: number;
+  catering_included?: boolean;
+  parking_available?: boolean;
+
+  // Hybrid specific
+  online_slots?: number;
+  onsite_slots?: number;
+
+  // Pricing
+  base_price?: number;
+  early_bird_price?: number;
+  early_bird_deadline?: string;
+  vat_rate?: number;
+  payment_methods?: string[];
+
+  // Registration
+  registration_deadline?: string;
+  event_url?: string;
+
+  // Documents
+  program_pdf?: string;
+  brochure_pdf?: string;
+  materials_available?: boolean;
+  materials_url?: string;
 }
 
 export interface TravelNeeds {
@@ -254,4 +310,28 @@ export interface FolderContents {
   folder: Folder;
   subfolders: Folder[];
   document_count: number;
+}
+
+export interface SystemSettings {
+  id: number;
+  tenant_id: number;
+  badges_enabled: boolean;
+  moodle_sync_enabled: boolean;
+  sponsors_enabled: boolean;
+  patronages_enabled: boolean;
+  documents_enabled: boolean;
+  webhooks_enabled: boolean;
+  custom_settings: Record<string, any>;
+  notes?: string;
+}
+
+export interface SystemSettingsUpdate {
+  badges_enabled?: boolean;
+  moodle_sync_enabled?: boolean;
+  sponsors_enabled?: boolean;
+  patronages_enabled?: boolean;
+  documents_enabled?: boolean;
+  webhooks_enabled?: boolean;
+  custom_settings?: Record<string, any>;
+  notes?: string;
 }
