@@ -9,8 +9,11 @@ export const emailsAPI = {
   },
 
   // Test SMTP connection
-  testSMTP: async (testEmail: string): Promise<{ success: boolean; message: string }> => {
-    const { data } = await apiClient.post('/emails/test', { test_email: testEmail });
+  testSMTP: async (testEmail: string, smtpType: 'global' | 'mailing' = 'global'): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.post('/emails/test', {
+      test_email: testEmail,
+      smtp_type: smtpType
+    });
     return data;
   },
 

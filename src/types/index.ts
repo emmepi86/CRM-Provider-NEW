@@ -329,6 +329,14 @@ export interface SystemSettings {
   smtp_use_ssl?: boolean;
   smtp_sender_email?: string;
   smtp_sender_name?: string;
+  mailing_smtp_host?: string;
+  mailing_smtp_port?: number;
+  mailing_smtp_username?: string;
+  mailing_smtp_password?: string;
+  mailing_smtp_use_tls?: boolean;
+  mailing_smtp_use_ssl?: boolean;
+  mailing_smtp_sender_email?: string;
+  mailing_smtp_sender_name?: string;
   jitsi_logo_url?: string;
   jitsi_primary_color?: string;
   jitsi_background_color?: string;
@@ -351,6 +359,14 @@ export interface SystemSettingsUpdate {
   smtp_use_ssl?: boolean;
   smtp_sender_email?: string;
   smtp_sender_name?: string;
+  mailing_smtp_host?: string;
+  mailing_smtp_port?: number;
+  mailing_smtp_username?: string;
+  mailing_smtp_password?: string;
+  mailing_smtp_use_tls?: boolean;
+  mailing_smtp_use_ssl?: boolean;
+  mailing_smtp_sender_email?: string;
+  mailing_smtp_sender_name?: string;
   jitsi_logo_url?: string;
   jitsi_primary_color?: string;
   jitsi_background_color?: string;
@@ -416,3 +432,6 @@ export interface EmailLog {
   sent_at: string;
   delivered_at?: string;
 }
+
+// Landing Page Builder Types
+export * from './landing';
