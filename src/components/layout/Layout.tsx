@@ -11,7 +11,10 @@ import {
   Menu,
   X,
   Settings as SettingsIcon,
-  Shield
+  Shield,
+  Mail,
+  FolderKanban,
+  MessageSquare
 } from 'lucide-react';
 import { authAPI } from '../../api/auth';
 import { useAuth } from '../../hooks/useAuth';
@@ -40,6 +43,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', show: true },
     { path: '/events', icon: Calendar, label: 'Eventi', show: true },
+    { path: '/projects', icon: FolderKanban, label: 'Progetti', show: true },
+    { path: '/chat', icon: MessageSquare, label: 'Chat Interna', show: true },
+    { path: '/inbox', icon: Mail, label: 'Email Hub', show: true },
     { path: '/participants', icon: Users, label: 'Partecipanti', show: true },
     { path: '/speakers', icon: Mic, label: 'Relatori', show: true },
     { path: '/users', icon: Shield, label: 'Gestione Utenti', show: isAdmin() },

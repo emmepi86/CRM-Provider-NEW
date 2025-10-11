@@ -14,6 +14,15 @@ import { SyncDashboard } from './pages/sync/SyncDashboard';
 import { WebhookDashboard } from './pages/webhooks/WebhookDashboard';
 import { Settings } from './pages/settings/Settings';
 import { Layout } from './components/layout/Layout';
+import { PublicLandingPage } from './pages/public/PublicLandingPage';
+import { LandingPageList } from './pages/landing/LandingPageList';
+import { LandingPageBuilder } from './pages/landing/LandingPageBuilder';
+import { InboxList } from './pages/inbox/InboxList';
+import { ThreadView } from './pages/inbox/ThreadView';
+import { IMAPSettings } from './pages/inbox/IMAPSettings';
+import { ProjectsDashboard } from './pages/projects/ProjectsDashboard';
+import { ProjectDetail } from './pages/projects/ProjectDetail';
+import { ChatLayout } from './pages/chat/ChatLayout';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const token = localStorage.getItem('access_token');
@@ -30,6 +39,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+
+        {/* Public Landing Page - No Auth Required */}
+        <Route path="/landing/:slug" element={<PublicLandingPage />} />
 
         <Route
           path="/dashboard"
@@ -135,6 +147,87 @@ function App() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/landing-pages"
+          element={
+            <ProtectedRoute>
+              <LandingPageList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/landing-pages/new"
+          element={
+            <ProtectedRoute>
+              <LandingPageBuilder />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/landing-pages/:id/edit"
+          element={
+            <ProtectedRoute>
+              <LandingPageBuilder />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/inbox"
+          element={
+            <ProtectedRoute>
+              <InboxList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/inbox/thread/:threadId"
+          element={
+            <ProtectedRoute>
+              <ThreadView />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/inbox/settings"
+          element={
+            <ProtectedRoute>
+              <IMAPSettings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <ProjectsDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/projects/:id"
+          element={
+            <ProtectedRoute>
+              <ProjectDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatLayout />
             </ProtectedRoute>
           }
         />
