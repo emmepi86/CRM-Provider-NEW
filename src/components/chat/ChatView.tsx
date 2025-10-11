@@ -10,6 +10,7 @@ import {
 import { chatAPI } from '../../api/chat';
 import { Message } from './Message';
 import { MessageInput } from './MessageInput';
+import { EditMessageModal } from './EditMessageModal';
 
 interface ChatViewProps {
   channel?: ChatChannel | null;
@@ -27,6 +28,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -77,13 +79,24 @@ export const ChatView: React.FC<ChatViewProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = async (content: string, mentionedUserIds?: number[]) => {
+  const handleSendMessage = async (
+    content: string,
+    mentionedUserIds?: number[],
+    fileData?: { file_url: string; file_name: string; file_size: number }
+  ) => {
     if (!channel && !group) return;
 
     const payload: ChatMessageCreate = {
       content,
       mentioned_user_ids: mentionedUserIds,
     };
+
+    // Add file data if present
+    if (fileData) {
+      payload.file_url = fileData.file_url;
+      payload.file_name = fileData.file_name;
+      payload.file_size = fileData.file_size;
+    }
 
     if (channel) {
       payload.channel_id = channel.id;
@@ -108,8 +121,13 @@ export const ChatView: React.FC<ChatViewProps> = ({
   };
 
   const handleEditMessage = async (message: ChatMessage) => {
-    // TODO: Open edit modal or inline edit
-    console.log('Edit message:', message);
+    setEditingMessage(message);
+  };
+
+  const handleEditSuccess = (updatedMessage: ChatMessage) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m))
+    );
   };
 
   const handleDeleteMessage = (messageId: number) => {
@@ -253,6 +271,15 @@ export const ChatView: React.FC<ChatViewProps> = ({
         onSend={handleSendMessage}
         placeholder={`Messaggio a ${getHeaderTitle()}`}
       />
+
+      {/* Edit Message Modal */}
+      {editingMessage && (
+        <EditMessageModal
+          message={editingMessage}
+          onClose={() => setEditingMessage(null)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   );
 };

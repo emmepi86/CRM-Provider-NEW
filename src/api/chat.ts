@@ -198,4 +198,19 @@ export const chatAPI = {
     });
     return data;
   },
+
+  /**
+   * Upload file attachment
+   */
+  uploadFile: async (file: File): Promise<{ file_url: string; file_name: string; file_size: number }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const { data } = await apiClient.post('/chat/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  },
 };
