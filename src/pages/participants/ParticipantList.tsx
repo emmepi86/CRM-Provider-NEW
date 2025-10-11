@@ -138,12 +138,24 @@ export const ParticipantList: React.FC = () => {
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users className="text-blue-600" size={20} />
+                      <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${
+                        participant.moodle_user_id ? 'bg-indigo-100' : 'bg-blue-100'
+                      }`}>
+                        <Users className={participant.moodle_user_id ? 'text-indigo-600' : 'text-blue-600'} size={20} />
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {participant.first_name} {participant.last_name}
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-900">
+                            {participant.first_name} {participant.last_name}
+                          </span>
+                          {participant.moodle_user_id && (
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800"
+                              title={`Sincronizzato da Moodle (ID: ${participant.moodle_user_id})`}
+                            >
+                              Moodle
+                            </span>
+                          )}
                         </div>
                         {participant.uuid && (
                           <div className="text-xs text-gray-500">

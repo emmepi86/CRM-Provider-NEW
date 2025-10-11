@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   User, Mail, Phone, MapPin, Briefcase, Calendar,
-  ArrowLeft, FileText, Award, Building, Plane, Hotel, Utensils, FolderOpen
+  ArrowLeft, FileText, Building, Plane, Hotel, Utensils, FolderOpen
 } from 'lucide-react';
 import { participantsAPI } from '../../api/participants';
 import { enrollmentsAPI } from '../../api/enrollments';
@@ -116,13 +116,25 @@ export const ParticipantDetail: React.FC = () => {
       {/* Dati Anagrafici */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-center space-x-4 mb-6">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <User className="text-blue-600" size={32} />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+            participant.moodle_user_id ? 'bg-indigo-100' : 'bg-blue-100'
+          }`}>
+            <User className={participant.moodle_user_id ? 'text-indigo-600' : 'text-blue-600'} size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {participant.first_name} {participant.last_name}
-            </h1>
+            <div className="flex items-center space-x-3">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {participant.first_name} {participant.last_name}
+              </h1>
+              {participant.moodle_user_id && (
+                <span
+                  className="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-indigo-100 text-indigo-800"
+                  title={`Sincronizzato da Moodle (ID: ${participant.moodle_user_id})`}
+                >
+                  Moodle
+                </span>
+              )}
+            </div>
             <p className="text-gray-500">UUID: {participant.uuid}</p>
           </div>
         </div>

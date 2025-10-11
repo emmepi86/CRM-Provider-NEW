@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit, Download, User, Mail, Video } from 'lucide-react';
+import { Calendar, MapPin, Users, Award, ArrowLeft, Trash2, Clock, FileText, Mic, Building2, Trophy, Clipboard, Edit, Download, User, Mail, Video, MousePointerClick } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { eventsAPI } from '../../api/events';
 import { EnrollParticipantModal } from '../../components/EnrollParticipantModal';
@@ -16,9 +16,10 @@ import { BadgeTab } from '../../components/badges/BadgeTab';
 import { EditEventModal } from '../../components/events/EditEventModal';
 import { SendEmailModal } from '../../components/emails/SendEmailModal';
 import { MeetingTab } from '../../components/events/MeetingTab';
+import { LandingTab } from '../../components/events/LandingTab';
 import { Event, Enrollment, EmailRecipient } from '../../types';
 
-type TabType = 'enrollments' | 'sessions' | 'meetings' | 'documents' | 'speakers' | 'sponsors' | 'patronages' | 'badges';
+type TabType = 'enrollments' | 'sessions' | 'meetings' | 'documents' | 'speakers' | 'sponsors' | 'patronages' | 'badges' | 'landing';
 
 export const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -305,6 +306,19 @@ export const EventDetail: React.FC = () => {
               <Users size={18} />
               <span>Iscritti ({enrollments.length})</span>
             </button>
+            {event.event_type !== 'ecm' && !event.moodle_course_id && (
+              <button
+                onClick={() => setActiveTab('landing')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === 'landing'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <MousePointerClick size={18} />
+                <span>Landing Page</span>
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('speakers')}
               className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
@@ -468,21 +482,36 @@ export const EventDetail: React.FC = () => {
                           </td>
                           <td className="py-3 px-4">
                             {enrollment.participant ? (
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => navigate(`/ecm/${enrollment.id}`, { state: { eventId: event.id, eventTitle: event.title } })}
-                                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-left"
-                                  title="Visualizza percorso ECM"
-                                >
-                                  {`${enrollment.participant.first_name} ${enrollment.participant.last_name}`}
-                                </button>
-                                <button
-                                  onClick={() => navigate(`/participants/${enrollment.participant_id}`)}
-                                  className="text-gray-500 hover:text-gray-700"
-                                  title="Visualizza anagrafica completa"
-                                >
-                                  <User size={16} />
-                                </button>
+                              <div className="flex items-center space-x-3">
+                                <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
+                                  enrollment.participant.moodle_user_id ? 'bg-indigo-100' : 'bg-blue-100'
+                                }`}>
+                                  <User className={enrollment.participant.moodle_user_id ? 'text-indigo-600' : 'text-blue-600'} size={16} />
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => navigate(`/ecm/${enrollment.id}`, { state: { eventId: event.id, eventTitle: event.title } })}
+                                    className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-left"
+                                    title="Visualizza percorso ECM"
+                                  >
+                                    {`${enrollment.participant.first_name} ${enrollment.participant.last_name}`}
+                                  </button>
+                                  {enrollment.participant.moodle_user_id && (
+                                    <span
+                                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800"
+                                      title={`Sincronizzato da Moodle (ID: ${enrollment.participant.moodle_user_id})`}
+                                    >
+                                      Moodle
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => navigate(`/participants/${enrollment.participant_id}`)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                    title="Visualizza anagrafica completa"
+                                  >
+                                    <User size={16} />
+                                  </button>
+                                </div>
                               </div>
                             ) : 'N/A'}
                           </td>
@@ -589,6 +618,10 @@ export const EventDetail: React.FC = () => {
 
           {canUseBadges() && activeTab === 'badges' && (
             <BadgeTab eventId={event.id} deliveryMode={event.delivery_mode || 'RESIDENTIAL'} />
+          )}
+
+          {event.event_type !== 'ecm' && !event.moodle_course_id && activeTab === 'landing' && (
+            <LandingTab eventId={event.id} />
           )}
         </div>
       </div>

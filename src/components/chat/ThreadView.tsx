@@ -141,7 +141,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
         replyingTo={{
           id: parentMessage.id,
           content: parentMessage.content,
-          sender: parentMessage.sender?.full_name || 'Unknown',
+          sender: parentMessage.sender ? `${parentMessage.sender.first_name} ${parentMessage.sender.last_name}` : 'Unknown',
         }}
       />
     </div>

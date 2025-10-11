@@ -28,29 +28,33 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't retry if it's a login/auth request to avoid infinite loops
+    const isAuthRequest = originalRequest.url?.includes('/auth/login') ||
+                         originalRequest.url?.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refresh_token');
-      
+
+      // If no refresh token, don't redirect - let the component handle it
       if (!refreshToken) {
-        localStorage.clear();
-        window.location.href = '/login';
         return Promise.reject(error);
       }
 
       try {
-        const response = await axios.post(`${API_BASE_URL.replace('/v1', '')}/auth/refresh`, {
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refresh_token: refreshToken,
         });
-        
+
         const { access_token } = response.data;
         localStorage.setItem('access_token', access_token);
-        
+
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
         }
         return apiClient(originalRequest);
       } catch (refreshError) {
+        // Clear tokens and redirect only if refresh fails
         localStorage.clear();
         window.location.href = '/login';
         return Promise.reject(refreshError);

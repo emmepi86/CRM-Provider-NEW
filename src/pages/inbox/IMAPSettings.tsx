@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, TestTube, CheckCircle, XCircle, Loader2, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Save, TestTube, CheckCircle, XCircle, Loader2, HelpCircle, Folder, Plus, RefreshCw } from 'lucide-react';
 import { inboxAPI } from '../../api/inbox';
 import type { IMAPSettings as IMAPSettingsType } from '../../types/inbox';
 
@@ -28,7 +28,32 @@ export const IMAPSettings: React.FC = () => {
 
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Folders management
+  const [folders, setFolders] = useState<Array<{ name: string; flags: string[] }>>([]);
+  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
+
+  // Load saved settings on mount
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        const savedSettings = await inboxAPI.getSettings();
+        setSettings(savedSettings);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        // Keep default settings if load fails
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   const handleTestConnection = async () => {
     try {
@@ -90,6 +115,60 @@ export const IMAPSettings: React.FC = () => {
   const applyPreset = (preset: 'gmail' | 'outlook') => {
     setSettings({ ...settings, ...presets[preset] });
   };
+
+  const loadFolders = async () => {
+    try {
+      setLoadingFolders(true);
+      const result = await inboxAPI.listFolders();
+      if (result.success) {
+        setFolders(result.folders);
+      } else {
+        alert(`Errore: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Errore caricamento cartelle:', error);
+      alert('Errore durante il caricamento delle cartelle. Verifica che le impostazioni IMAP siano salvate e corrette.');
+    } finally {
+      setLoadingFolders(false);
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) {
+      alert('Inserisci un nome per la cartella');
+      return;
+    }
+
+    try {
+      setCreatingFolder(true);
+      const result = await inboxAPI.createFolder(newFolderName.trim());
+      if (result.success) {
+        alert('Cartella creata con successo!');
+        setNewFolderName('');
+        // Reload folders
+        await loadFolders();
+      } else {
+        alert(`Errore: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Errore creazione cartella:', error);
+      alert('Errore durante la creazione della cartella');
+    } finally {
+      setCreatingFolder(false);
+    }
+  };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Caricamento impostazioni...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -422,6 +501,97 @@ export const IMAPSettings: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* IMAP Folders Management */}
+      <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
+        <div className="border-b border-gray-200 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Cartelle IMAP</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Visualizza e gestisci le cartelle nella tua casella email
+              </p>
+            </div>
+            <button
+              onClick={loadFolders}
+              disabled={loadingFolders}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center space-x-2 disabled:opacity-50"
+            >
+              {loadingFolders ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Caricamento...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Carica Cartelle</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Folders List */}
+        {folders.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Cartelle Disponibili:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {folders.map((folder, index) => (
+                <div
+                  key={index}
+                  className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <Folder className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                  <span className="text-sm text-gray-900 font-medium truncate">
+                    {folder.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Create New Folder */}
+        <div className="border-t border-gray-200 pt-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Crea Nuova Cartella:</h3>
+          <div className="flex items-center space-x-3">
+            <input
+              type="text"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Nome cartella (es. Lavoro, Personale, Archivio)"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleCreateFolder();
+                }
+              }}
+              disabled={creatingFolder}
+            />
+            <button
+              onClick={handleCreateFolder}
+              disabled={creatingFolder || !newFolderName.trim()}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2 disabled:opacity-50"
+            >
+              {creatingFolder ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Creazione...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  <span>Crea</span>
+                </>
+              )}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            La cartella verrà creata sul server IMAP e sarà visibile in tutti i client email (Gmail, Outlook, ecc.)
+          </p>
         </div>
       </div>
 

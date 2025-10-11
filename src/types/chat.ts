@@ -101,7 +101,8 @@ export interface ChatMessage {
   sender?: {
     id: number;
     email: string;
-    full_name: string;
+    first_name: string;
+    last_name: string;
   };
 }
 
@@ -114,7 +115,8 @@ export interface ChatReaction {
   user?: {
     id: number;
     email: string;
-    full_name: string;
+    first_name: string;
+    last_name: string;
   };
 }
 

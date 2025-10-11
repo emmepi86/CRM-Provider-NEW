@@ -99,7 +99,7 @@ export const Message: React.FC<MessageProps> = ({
         {/* Avatar */}
         <div className="flex-shrink-0">
           <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-            {message.sender?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+            {message.sender?.first_name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
         </div>
 
@@ -108,7 +108,7 @@ export const Message: React.FC<MessageProps> = ({
           {/* Header */}
           <div className="flex items-baseline space-x-2 mb-1">
             <span className="font-semibold text-gray-900">
-              {message.sender?.full_name || 'Unknown User'}
+              {message.sender ? `${message.sender.first_name} ${message.sender.last_name}` : 'Unknown User'}
             </span>
             <span className="text-xs text-gray-500">
               {formatTime(message.created_at)}
@@ -174,7 +174,7 @@ export const Message: React.FC<MessageProps> = ({
                         ? 'bg-blue-100 border-blue-300 text-blue-700'
                         : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
                     }`}
-                    title={reactions.map((r) => r.user?.full_name).join(', ')}
+                    title={reactions.map((r) => r.user ? `${r.user.first_name} ${r.user.last_name}` : 'Unknown').join(', ')}
                   >
                     <span>{emoji}</span>
                     <span className="ml-1">{reactions.length}</span>

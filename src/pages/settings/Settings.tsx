@@ -42,6 +42,10 @@ export const Settings: React.FC = () => {
         patronages_enabled: data.patronages_enabled,
         documents_enabled: data.documents_enabled,
         webhooks_enabled: data.webhooks_enabled,
+        ecm_enabled: data.ecm_enabled,
+        mailing_enabled: data.mailing_enabled,
+        meetings_enabled: data.meetings_enabled,
+        landing_pages_enabled: data.landing_pages_enabled,
         smtp_host: data.smtp_host || '',
         smtp_port: data.smtp_port || 587,
         smtp_username: data.smtp_username || '',
@@ -259,6 +263,42 @@ export const Settings: React.FC = () => {
             onToggle={() => handleToggle('webhooks_enabled')}
             icon="🔗"
             warning="Funzionalità avanzata - richiede configurazione tecnica"
+          />
+
+          {/* ECM Management */}
+          <FeatureToggle
+            title="Gestione ECM"
+            description="Abilita il tracking dei crediti ECM, sincronizzazione con Moodle e certificazioni"
+            enabled={formData.ecm_enabled ?? true}
+            onToggle={() => handleToggle('ecm_enabled')}
+            icon="🎓"
+          />
+
+          {/* Mailing System */}
+          <FeatureToggle
+            title="Sistema Mailing"
+            description="Abilita l'invio di email massive, template e gestione campagne"
+            enabled={formData.mailing_enabled ?? true}
+            onToggle={() => handleToggle('mailing_enabled')}
+            icon="📧"
+          />
+
+          {/* Meetings/Video Conference */}
+          <FeatureToggle
+            title="Meeting Virtuali"
+            description="Abilita la creazione e gestione di videoconferenze con Jitsi Meet"
+            enabled={formData.meetings_enabled ?? true}
+            onToggle={() => handleToggle('meetings_enabled')}
+            icon="📹"
+          />
+
+          {/* Landing Pages Builder */}
+          <FeatureToggle
+            title="Landing Page Builder"
+            description="Abilita la creazione di landing pages pubbliche per registrazione eventi con form dinamici"
+            enabled={formData.landing_pages_enabled ?? true}
+            onToggle={() => handleToggle('landing_pages_enabled')}
+            icon="🌐"
           />
         </div>
 

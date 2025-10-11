@@ -125,3 +125,40 @@ export interface EmailsListResponse {
   page: number;
   page_size: number;
 }
+
+export interface EmailAttachmentRequest {
+  filename: string;
+  content: string; // base64 encoded
+  content_type: string;
+}
+
+export interface ComposeEmailRequest {
+  to_email: string;
+  subject: string;
+  body_html: string;
+  body_text?: string;
+  cc_emails?: string[];
+  bcc_emails?: string[];
+  attachments?: EmailAttachmentRequest[];
+}
+
+export interface ComposeEmailResponse {
+  success: boolean;
+  email_log_id?: number;
+  message: string;
+}
+
+export interface ForwardEmailRequest {
+  to_email: string;
+  body_html: string;
+  body_text?: string;
+  cc_emails?: string[];
+  bcc_emails?: string[];
+  attachments?: EmailAttachmentRequest[];
+}
+
+export interface ForwardEmailResponse {
+  success: boolean;
+  email_log_id?: number;
+  message: string;
+}
