@@ -3,11 +3,15 @@ import { ChatChannel, ChatGroup, ChatMessage } from '../../types/chat';
 import { ChannelList } from '../../components/chat/ChannelList';
 import { ChatView } from '../../components/chat/ChatView';
 import { ThreadView } from '../../components/chat/ThreadView';
+import { CreateChannelModal } from '../../components/chat/CreateChannelModal';
+import { CreateDMModal } from '../../components/chat/CreateDMModal';
 
 export const ChatLayout: React.FC = () => {
   const [selectedChannel, setSelectedChannel] = useState<ChatChannel | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<ChatGroup | null>(null);
   const [threadMessage, setThreadMessage] = useState<ChatMessage | null>(null);
+  const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
+  const [showCreateDMModal, setShowCreateDMModal] = useState(false);
 
   // Get current user ID from localStorage or context
   const currentUserId = parseInt(localStorage.getItem('user_id') || '0', 10);
@@ -32,23 +36,28 @@ export const ChatLayout: React.FC = () => {
     setThreadMessage(null);
   };
 
+  const handleChannelCreated = () => {
+    // Refresh channel list by forcing re-render
+    window.location.reload();
+  };
+
+  const handleDMCreated = () => {
+    // Refresh group list by forcing re-render
+    window.location.reload();
+  };
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Left Sidebar - Channel/Group List */}
-      <ChannelList
-        selectedChannelId={selectedChannel?.id}
-        selectedGroupId={selectedGroup?.id}
-        onSelectChannel={handleSelectChannel}
-        onSelectGroup={handleSelectGroup}
-        onCreateChannel={() => {
-          // TODO: Open create channel modal
-          alert('Crea canale - TODO');
-        }}
-        onCreateGroup={() => {
-          // TODO: Open create DM/group modal
-          alert('Crea DM/Gruppo - TODO');
-        }}
-      />
+    <>
+      <div className="flex h-screen bg-gray-100">
+        {/* Left Sidebar - Channel/Group List */}
+        <ChannelList
+          selectedChannelId={selectedChannel?.id}
+          selectedGroupId={selectedGroup?.id}
+          onSelectChannel={handleSelectChannel}
+          onSelectGroup={handleSelectGroup}
+          onCreateChannel={() => setShowCreateChannelModal(true)}
+          onCreateGroup={() => setShowCreateDMModal(true)}
+        />
 
       {/* Main Content - Chat View */}
       <ChatView
@@ -58,14 +67,31 @@ export const ChatLayout: React.FC = () => {
         onOpenThread={handleOpenThread}
       />
 
-      {/* Right Sidebar - Thread View (conditional) */}
-      {threadMessage && (
-        <ThreadView
-          parentMessage={threadMessage}
-          currentUserId={currentUserId}
-          onClose={handleCloseThread}
+        {/* Right Sidebar - Thread View (conditional) */}
+        {threadMessage && (
+          <ThreadView
+            parentMessage={threadMessage}
+            currentUserId={currentUserId}
+            onClose={handleCloseThread}
+          />
+        )}
+      </div>
+
+      {/* Modals */}
+      {showCreateChannelModal && (
+        <CreateChannelModal
+          onClose={() => setShowCreateChannelModal(false)}
+          onSuccess={handleChannelCreated}
         />
       )}
-    </div>
+
+      {showCreateDMModal && (
+        <CreateDMModal
+          onClose={() => setShowCreateDMModal(false)}
+          onSuccess={handleDMCreated}
+          currentUserId={currentUserId}
+        />
+      )}
+    </>
   );
 };

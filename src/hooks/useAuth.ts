@@ -110,6 +110,38 @@ export const useAuth = () => {
     return settings?.webhooks_enabled ?? false;
   };
 
+  /**
+   * Granular user permissions - respect both system settings and user-level permissions
+   */
+  const canUseChat = (): boolean => {
+    if (isSuperadmin()) return true;
+    if (!settings?.chat_enabled) return false; // System-wide disabled
+    return user?.can_use_chat ?? true;
+  };
+
+  const canCreateChannels = (): boolean => {
+    if (isSuperadmin()) return true;
+    if (!settings?.chat_enabled) return false;
+    if (!user?.can_use_chat) return false;
+    return user?.can_create_channels ?? false;
+  };
+
+  const canUseProjects = (): boolean => {
+    if (isSuperadmin()) return true;
+    return user?.can_use_projects ?? true;
+  };
+
+  const canUseEmailHub = (): boolean => {
+    if (isSuperadmin()) return true;
+    return user?.can_use_email_hub ?? true;
+  };
+
+  const canUseLandingPages = (): boolean => {
+    if (isSuperadmin()) return true;
+    if (!settings?.landing_pages_enabled) return false;
+    return user?.can_use_landing_pages ?? false;
+  };
+
   return {
     user,
     loading: loading || settingsLoading,
@@ -124,12 +156,18 @@ export const useAuth = () => {
     canManageSettings,
     canCreateEdit,
     canDelete,
-    // Feature permissions
+    // Feature permissions (system-wide)
     canUseBadges,
     canUseMoodleSync,
     canUseSponsors,
     canUsePatronages,
     canUseDocuments,
     canUseWebhooks,
+    // Granular user permissions
+    canUseChat,
+    canCreateChannels,
+    canUseProjects,
+    canUseEmailHub,
+    canUseLandingPages,
   };
 };

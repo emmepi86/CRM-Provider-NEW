@@ -93,6 +93,11 @@ export const useSettings = () => {
       patronages_enabled: true,
       documents_enabled: true,
       webhooks_enabled: false,
+      ecm_enabled: true,
+      mailing_enabled: true,
+      meetings_enabled: true,
+      landing_pages_enabled: true,
+      chat_enabled: true,
       custom_settings: {},
     };
   };

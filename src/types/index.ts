@@ -10,6 +10,12 @@ export interface User {
   is_active: boolean;
   active: boolean;
   tenant_id: number;
+  // Granular permissions
+  can_use_chat: boolean;
+  can_create_channels: boolean;
+  can_use_projects: boolean;
+  can_use_email_hub: boolean;
+  can_use_landing_pages: boolean;
 }
 
 export interface LoginRequest {
@@ -321,6 +327,11 @@ export interface SystemSettings {
   patronages_enabled: boolean;
   documents_enabled: boolean;
   webhooks_enabled: boolean;
+  ecm_enabled: boolean;
+  mailing_enabled: boolean;
+  meetings_enabled: boolean;
+  landing_pages_enabled: boolean;
+  chat_enabled: boolean;
   smtp_host?: string;
   smtp_port?: number;
   smtp_username?: string;
@@ -351,6 +362,11 @@ export interface SystemSettingsUpdate {
   patronages_enabled?: boolean;
   documents_enabled?: boolean;
   webhooks_enabled?: boolean;
+  ecm_enabled?: boolean;
+  mailing_enabled?: boolean;
+  meetings_enabled?: boolean;
+  landing_pages_enabled?: boolean;
+  chat_enabled?: boolean;
   smtp_host?: string;
   smtp_port?: number;
   smtp_username?: string;
