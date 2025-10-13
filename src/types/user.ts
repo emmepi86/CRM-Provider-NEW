@@ -9,6 +9,11 @@ export interface User {
   last_login: string | null;
   created_at: string;
   updated_at: string;
+  can_use_chat?: boolean;
+  can_create_channels?: boolean;
+  can_use_projects?: boolean;
+  can_use_email_hub?: boolean;
+  can_use_landing_pages?: boolean;
 }
 
 export type UserRole = 'superadmin' | 'admin' | 'operator' | 'viewer';
@@ -19,6 +24,11 @@ export interface UserCreate {
   first_name: string;
   last_name: string;
   role: UserRole;
+  can_use_chat?: boolean;
+  can_create_channels?: boolean;
+  can_use_projects?: boolean;
+  can_use_email_hub?: boolean;
+  can_use_landing_pages?: boolean;
 }
 
 export interface UserUpdate {
@@ -27,6 +37,11 @@ export interface UserUpdate {
   last_name?: string;
   role?: UserRole;
   active?: boolean;
+  can_use_chat?: boolean;
+  can_create_channels?: boolean;
+  can_use_projects?: boolean;
+  can_use_email_hub?: boolean;
+  can_use_landing_pages?: boolean;
 }
 
 export interface PasswordChange {

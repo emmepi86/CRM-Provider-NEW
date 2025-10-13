@@ -16,6 +16,11 @@ interface FormData {
   email: string;
   role: UserRole;
   active: boolean;
+  can_use_chat: boolean;
+  can_create_channels: boolean;
+  can_use_projects: boolean;
+  can_use_email_hub: boolean;
+  can_use_landing_pages: boolean;
 }
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -44,6 +49,11 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     email: user.email,
     role: user.role,
     active: user.active,
+    can_use_chat: user.can_use_chat ?? true,
+    can_create_channels: user.can_create_channels ?? false,
+    can_use_projects: user.can_use_projects ?? true,
+    can_use_email_hub: user.can_use_email_hub ?? true,
+    can_use_landing_pages: user.can_use_landing_pages ?? false,
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -82,6 +92,11 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         last_name: formData.last_name,
         email: formData.email,
         active: formData.active,
+        can_use_chat: formData.can_use_chat,
+        can_create_channels: formData.can_create_channels,
+        can_use_projects: formData.can_use_projects,
+        can_use_email_hub: formData.can_use_email_hub,
+        can_use_landing_pages: formData.can_use_landing_pages,
       };
 
       // Only include role if superadmin
@@ -265,6 +280,92 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                 </p>
               </div>
             </label>
+          </div>
+
+          {/* Granular Permissions */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Permessi Granulari</h3>
+            <div className="space-y-3 bg-gray-50 rounded-md p-4">
+              {/* Chat Permission */}
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.can_use_chat}
+                  onChange={(e) => handleChange('can_use_chat', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">💬 Può usare Chat</span>
+                  <p className="text-xs text-gray-500">
+                    Accesso al sistema di messaggistica interna
+                  </p>
+                </div>
+              </label>
+
+              {/* Create Channels Permission */}
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.can_create_channels}
+                  onChange={(e) => handleChange('can_create_channels', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">📢 Può creare canali</span>
+                  <p className="text-xs text-gray-500">
+                    Può creare nuovi canali nella chat di gruppo
+                  </p>
+                </div>
+              </label>
+
+              {/* Projects Permission */}
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.can_use_projects}
+                  onChange={(e) => handleChange('can_use_projects', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">📋 Può usare Progetti</span>
+                  <p className="text-xs text-gray-500">
+                    Accesso al Project Planner e task management
+                  </p>
+                </div>
+              </label>
+
+              {/* Email Hub Permission */}
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.can_use_email_hub}
+                  onChange={(e) => handleChange('can_use_email_hub', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">📧 Può usare Email Hub</span>
+                  <p className="text-xs text-gray-500">
+                    Accesso alla casella email integrata e IMAP
+                  </p>
+                </div>
+              </label>
+
+              {/* Landing Pages Permission */}
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.can_use_landing_pages}
+                  onChange={(e) => handleChange('can_use_landing_pages', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">🌐 Può gestire Landing Pages</span>
+                  <p className="text-xs text-gray-500">
+                    Può creare e gestire landing pages per eventi
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
 
           {/* User Info */}
