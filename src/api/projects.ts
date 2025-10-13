@@ -83,6 +83,29 @@ export interface ProjectMessage {
   author_name?: string;
   author_email?: string;
   comments_count?: number;
+  comments?: ProjectMessageComment[];
+}
+
+export interface ProjectMessageComment {
+  id: number;
+  message_id: number;
+  content: string;
+  created_by: number;
+  created_at: string;
+  updated_at?: string;
+  author_name?: string;
+  author_email?: string;
+}
+
+export interface ProjectMilestone {
+  id: number;
+  project_id: number;
+  name: string;
+  description?: string;
+  due_date: string;
+  completed: boolean;
+  completed_at?: string;
+  created_at: string;
 }
 
 export interface ProjectActivity {
@@ -111,7 +134,7 @@ export interface ProjectDetailResponse extends Project {
   members: ProjectMember[];
   todo_lists: TodoList[];
   recent_messages: ProjectMessage[];
-  milestones: any[];
+  milestones: ProjectMilestone[];
   recent_activity: ProjectActivity[];
 }
 
@@ -159,6 +182,11 @@ export const projectsAPI = {
     return data;
   },
 
+  updateMemberRole: async (projectId: number, userId: number, role: string) => {
+    const { data } = await apiClient.put<ProjectMember>(`/projects/${projectId}/members/${userId}`, { role });
+    return data;
+  },
+
   removeMember: async (projectId: number, userId: number) => {
     await apiClient.delete(`/projects/${projectId}/members/${userId}`);
   },
@@ -167,6 +195,16 @@ export const projectsAPI = {
   createTodoList: async (listData: { project_id: number; name: string; description?: string }) => {
     const { data } = await apiClient.post<TodoList>('/projects/todo-lists', listData);
     return data;
+  },
+
+  // Todo Lists Management
+  updateTodoList: async (listId: number, listData: { name?: string; description?: string; position?: number }) => {
+    const { data } = await apiClient.put<TodoList>(`/projects/todo-lists/${listId}`, listData);
+    return data;
+  },
+
+  deleteTodoList: async (listId: number) => {
+    await apiClient.delete(`/projects/todo-lists/${listId}`);
   },
 
   // Todo Items
@@ -182,6 +220,22 @@ export const projectsAPI = {
     return data;
   },
 
+  updateTodoItem: async (itemId: number, itemData: {
+    title?: string;
+    description?: string;
+    assigned_to?: number;
+    priority?: string;
+    due_date?: string;
+    position?: number;
+  }) => {
+    const { data } = await apiClient.put<TodoItem>(`/projects/todo-items/${itemId}`, itemData);
+    return data;
+  },
+
+  deleteTodoItem: async (itemId: number) => {
+    await apiClient.delete(`/projects/todo-items/${itemId}`);
+  },
+
   toggleTodoCompletion: async (itemId: number, completed: boolean) => {
     const { data } = await apiClient.patch<TodoItem>(`/projects/todo-items/${itemId}/complete`, { completed });
     return data;
@@ -193,9 +247,47 @@ export const projectsAPI = {
     title?: string;
     content: string;
     message_type?: string;
+    is_pinned?: boolean;
   }) => {
     const { data } = await apiClient.post<ProjectMessage>('/projects/messages', messageData);
     return data;
+  },
+
+  getMessage: async (messageId: number) => {
+    const { data } = await apiClient.get<ProjectMessage>(`/projects/messages/${messageId}`);
+    return data;
+  },
+
+  updateMessage: async (messageId: number, messageData: {
+    title?: string;
+    content?: string;
+    message_type?: string;
+    is_pinned?: boolean;
+  }) => {
+    const { data } = await apiClient.put<ProjectMessage>(`/projects/messages/${messageId}`, messageData);
+    return data;
+  },
+
+  deleteMessage: async (messageId: number) => {
+    await apiClient.delete(`/projects/messages/${messageId}`);
+  },
+
+  // Comments
+  createComment: async (commentData: {
+    message_id: number;
+    content: string;
+  }) => {
+    const { data } = await apiClient.post('/projects/messages/comments', commentData);
+    return data;
+  },
+
+  updateComment: async (commentId: number, content: string) => {
+    const { data } = await apiClient.put(`/projects/messages/comments/${commentId}`, { content });
+    return data;
+  },
+
+  deleteComment: async (commentId: number) => {
+    await apiClient.delete(`/projects/messages/comments/${commentId}`);
   },
 
   // Activity
@@ -203,6 +295,36 @@ export const projectsAPI = {
     const { data } = await apiClient.get<ProjectActivity[]>(`/projects/${projectId}/activity`, {
       params: { limit }
     });
+    return data;
+  },
+
+  // Milestones
+  createMilestone: async (milestoneData: {
+    project_id: number;
+    name: string;
+    description?: string;
+    due_date: string;
+  }) => {
+    const { data } = await apiClient.post<ProjectMilestone>('/projects/milestones', milestoneData);
+    return data;
+  },
+
+  updateMilestone: async (milestoneId: number, milestoneData: {
+    name?: string;
+    description?: string;
+    due_date?: string;
+    completed?: boolean;
+  }) => {
+    const { data } = await apiClient.put<ProjectMilestone>(`/projects/milestones/${milestoneId}`, milestoneData);
+    return data;
+  },
+
+  deleteMilestone: async (milestoneId: number) => {
+    await apiClient.delete(`/projects/milestones/${milestoneId}`);
+  },
+
+  toggleMilestoneCompletion: async (milestoneId: number, completed: boolean) => {
+    const { data } = await apiClient.patch<ProjectMilestone>(`/projects/milestones/${milestoneId}/complete`, { completed });
     return data;
   }
 };
