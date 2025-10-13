@@ -1,5 +1,5 @@
 import React, { useState, useRef, KeyboardEvent } from 'react';
-import { Send, Smile, Paperclip, X, FileIcon } from 'lucide-react';
+import { Send, Smile, Paperclip, X, FileIcon, Loader2 } from 'lucide-react';
 import { chatAPI } from '../../api/chat';
 
 interface MessageInputProps {
@@ -105,65 +105,74 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     <div className="border-t border-gray-200 bg-white">
       {/* Replying To Banner */}
       {replyingTo && (
-        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            <span className="font-semibold">Rispondi a {replyingTo.sender}:</span>{' '}
-            <span className="text-gray-500 truncate max-w-md inline-block align-bottom">
-              {replyingTo.content}
-            </span>
+        <div className="px-6 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+          <div className="text-sm text-indigo-900 flex items-center gap-2">
+            <div className="w-1 h-10 bg-indigo-600 rounded-full"></div>
+            <div>
+              <span className="font-semibold block">Rispondi a {replyingTo.sender}</span>
+              <span className="text-indigo-600 truncate max-w-md inline-block">
+                {replyingTo.content}
+              </span>
+            </div>
           </div>
           <button
             onClick={onCancelReply}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* File Attachment Preview */}
-      {uploadedFile && (
-        <div className="px-4 py-2 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-sm">
-            <FileIcon className="w-4 h-4 text-blue-600" />
-            <span className="font-medium text-blue-900">{uploadedFile.file_name}</span>
-            <span className="text-blue-600">({(uploadedFile.file_size / 1024).toFixed(1)} KB)</span>
-          </div>
-          <button
-            onClick={handleRemoveFile}
-            disabled={isSending}
-            className="text-blue-600 hover:text-blue-800"
-            title="Rimuovi file"
+            className="text-indigo-400 hover:text-indigo-600 transition-colors p-1 hover:bg-indigo-100 rounded"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
+      {/* File Attachment Preview */}
+      {uploadedFile && (
+        <div className="px-6 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+              <FileIcon className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="font-medium text-indigo-900 text-sm">{uploadedFile.file_name}</p>
+              <p className="text-indigo-600 text-xs">
+                {(uploadedFile.file_size / 1024).toFixed(1)} KB • Pronto per l'invio
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleRemoveFile}
+            disabled={isSending}
+            className="text-indigo-600 hover:text-indigo-800 hover:bg-white p-2 rounded-lg transition-all disabled:opacity-50"
+            title="Rimuovi file"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* Input Area */}
-      <div className="px-4 py-3">
-        <div className="flex items-end space-x-3">
-          {/* Textarea */}
+      <div className="px-6 py-4">
+        <div className="flex items-end gap-3">
+          {/* Textarea Container */}
           <div className="flex-1 relative">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={handleChange}
               onKeyDown={handleKeyDown}
-              placeholder={uploadedFile ? 'Aggiungi un messaggio (opzionale)' : placeholder}
+              placeholder={uploadedFile ? 'Aggiungi un messaggio (opzionale)...' : placeholder}
               disabled={isSending || isUploading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50"
-              style={{ minHeight: '40px', maxHeight: '200px' }}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 transition-all placeholder:text-gray-400"
+              style={{ minHeight: '48px', maxHeight: '200px' }}
               rows={1}
             />
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center space-x-2 pb-2">
+          <div className="flex items-center gap-2 pb-1">
             {/* Emoji Picker (placeholder) */}
             <button
               type="button"
-              className="p-2 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"
+              className="p-3 text-gray-400 hover:text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all disabled:opacity-50"
               title="Aggiungi emoji"
               disabled={isUploading || isSending}
             >
@@ -175,16 +184,20 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               type="button"
               onClick={handleFileClick}
               disabled={isUploading || isSending || !!uploadedFile}
-              className={`p-2 rounded hover:bg-gray-100 ${
+              className={`p-3 rounded-xl transition-all ${
                 isUploading
-                  ? 'text-blue-500 animate-pulse'
+                  ? 'text-indigo-600 bg-indigo-50 animate-pulse'
                   : uploadedFile
-                  ? 'text-green-600'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-              title={isUploading ? 'Caricamento...' : 'Allega file'}
+                  ? 'text-emerald-600 bg-emerald-50'
+                  : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
+              } disabled:opacity-50`}
+              title={isUploading ? 'Caricamento...' : uploadedFile ? 'File allegato' : 'Allega file'}
             >
-              <Paperclip className="w-5 h-5" />
+              {isUploading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Paperclip className="w-5 h-5" />
+              )}
             </button>
             <input
               ref={fileInputRef}
@@ -198,30 +211,38 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             <button
               onClick={handleSubmit}
               disabled={(!content.trim() && !uploadedFile) || isSending || isUploading}
-              className={`p-2 rounded-lg ${
+              className={`p-3 rounded-xl transition-all shadow-md ${
                 (content.trim() || uploadedFile) && !isSending && !isUploading
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-105 active:scale-95'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
               }`}
               title="Invia (Enter)"
             >
-              <Send className="w-5 h-5" />
+              {isSending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
 
         {/* Hint Text */}
-        {!uploadedFile && (
-          <p className="text-xs text-gray-400 mt-2">
-            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">
-              Enter
-            </kbd>{' '}
-            per inviare,{' '}
-            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">
-              Shift+Enter
-            </kbd>{' '}
-            per andare a capo
-          </p>
+        {!uploadedFile && !isSending && (
+          <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">
+                Enter
+              </kbd>
+              <span>per inviare</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">
+                Shift+Enter
+              </kbd>
+              <span>per andare a capo</span>
+            </span>
+          </div>
         )}
       </div>
     </div>

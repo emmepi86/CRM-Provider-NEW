@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Hash, Lock, Users, MessageCircle, Settings } from 'lucide-react';
+import { Hash, Lock, Users, MessageCircle, Settings, Info, Bell, BellOff } from 'lucide-react';
 import {
   ChatChannel,
   ChatGroup,
@@ -143,18 +143,39 @@ export const ChatView: React.FC<ChatViewProps> = ({
     if (channel) {
       switch (channel.channel_type) {
         case ChannelType.PUBLIC:
-          return <Hash className="w-6 h-6" />;
+          return <Hash className="w-6 h-6 text-indigo-600" />;
         case ChannelType.PRIVATE:
-          return <Lock className="w-6 h-6" />;
+          return <Lock className="w-6 h-6 text-amber-600" />;
         case ChannelType.DEPARTMENT:
-          return <Users className="w-6 h-6" />;
+          return <Users className="w-6 h-6 text-emerald-600" />;
       }
     }
     if (group) {
       return group.is_dm ? (
-        <MessageCircle className="w-6 h-6" />
+        <MessageCircle className="w-6 h-6 text-emerald-600" />
       ) : (
-        <Users className="w-6 h-6" />
+        <Users className="w-6 h-6 text-purple-600" />
+      );
+    }
+    return null;
+  };
+
+  const getHeaderBadge = () => {
+    if (channel) {
+      switch (channel.channel_type) {
+        case ChannelType.PUBLIC:
+          return <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">Pubblico</span>;
+        case ChannelType.PRIVATE:
+          return <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-medium">Privato</span>;
+        case ChannelType.DEPARTMENT:
+          return <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-medium">Reparto</span>;
+      }
+    }
+    if (group) {
+      return group.is_dm ? (
+        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-medium">Messaggio Diretto</span>
+      ) : (
+        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">Gruppo</span>
       );
     }
     return null;
@@ -168,20 +189,42 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
   const getHeaderDescription = () => {
     if (channel) return channel.description || '';
+    if (group && !group.is_dm) return 'Gruppo privato';
     return '';
   };
 
   if (!channel && !group) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+        <div className="text-center max-w-md">
+          <div className="mb-6 relative">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 mx-auto flex items-center justify-center shadow-lg">
+              <MessageCircle className="w-12 h-12 text-white" />
+            </div>
+            <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-md">
+              <span className="text-2xl">💬</span>
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">
             Benvenuto nella Chat Interna
           </h3>
-          <p className="text-gray-500">
-            Seleziona un canale o avvia una conversazione
+          <p className="text-gray-500 mb-6">
+            Seleziona un canale dalla sidebar o avvia una nuova conversazione per iniziare a chattare con il tuo team
           </p>
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+            <div className="flex items-center gap-2">
+              <Hash className="w-4 h-4" />
+              <span>Canali</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              <span>Messaggi Diretti</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>Gruppi</span>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -190,41 +233,64 @@ export const ChatView: React.FC<ChatViewProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center space-x-3">
-          <div className="text-gray-700">{getHeaderIcon()}</div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              {getHeaderTitle()}
-            </h2>
-            {getHeaderDescription() && (
-              <p className="text-sm text-gray-500">{getHeaderDescription()}</p>
+      <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-white to-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            {/* Icon */}
+            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm">
+              {getHeaderIcon()}
+            </div>
+
+            {/* Title & Description */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-lg font-bold text-gray-900 truncate">
+                  {getHeaderTitle()}
+                </h2>
+                {getHeaderBadge()}
+              </div>
+              {getHeaderDescription() && (
+                <p className="text-sm text-gray-500 flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5" />
+                  <span className="truncate">{getHeaderDescription()}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              className="p-2.5 hover:bg-gray-100 rounded-lg transition-colors group"
+              title="Notifiche"
+            >
+              <Bell className="w-5 h-5 text-gray-600 group-hover:text-indigo-600" />
+            </button>
+
+            {channel && (
+              <button
+                className="p-2.5 hover:bg-gray-100 rounded-lg transition-colors group"
+                title="Impostazioni canale"
+              >
+                <Settings className="w-5 h-5 text-gray-600 group-hover:text-indigo-600" />
+              </button>
             )}
           </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {/* Channel Settings (if channel owner/admin) */}
-          {channel && (
-            <button
-              className="p-2 hover:bg-gray-100 rounded"
-              title="Impostazioni canale"
-            >
-              <Settings className="w-5 h-5 text-gray-600" />
-            </button>
-          )}
         </div>
       </div>
 
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto bg-white"
+        className="flex-1 overflow-y-auto bg-gray-50"
         style={{ maxHeight: 'calc(100vh - 200px)' }}
       >
         {loading && messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-gray-500">Caricamento messaggi...</div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto mb-3"></div>
+              <div className="text-gray-500 text-sm">Caricamento messaggi...</div>
+            </div>
           </div>
         ) : (
           <>
@@ -234,7 +300,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 <button
                   onClick={() => fetchMessages(messages.length)}
                   disabled={loading}
-                  className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                  className="px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {loading ? 'Caricamento...' : 'Carica messaggi precedenti'}
                 </button>
@@ -243,11 +309,21 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
             {/* Messages List */}
             {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                Nessun messaggio ancora. Inizia la conversazione!
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-sm">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 mx-auto mb-4 flex items-center justify-center">
+                    <MessageCircle className="w-8 h-8 text-indigo-600" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-1">
+                    Nessun messaggio ancora
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    Sii il primo a inviare un messaggio in questa conversazione!
+                  </p>
+                </div>
               </div>
             ) : (
-              <div>
+              <div className="pb-4">
                 {messages.map((message) => (
                   <Message
                     key={message.id}

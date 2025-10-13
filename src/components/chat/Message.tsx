@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Edit2, MessageSquare, Smile, MoreVertical } from 'lucide-react';
+import { Trash2, Edit2, MessageSquare, Smile, MoreVertical, FileIcon, Download } from 'lucide-react';
 import { ChatMessage, ChatReaction } from '../../types/chat';
 import { chatAPI } from '../../api/chat';
 
@@ -13,6 +13,23 @@ interface MessageProps {
 }
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🎉', '🚀', '👀'];
+
+// Generate consistent gradient colors based on user ID
+const getAvatarGradient = (userId: number): string => {
+  const gradients = [
+    'from-blue-500 to-indigo-600',
+    'from-purple-500 to-pink-600',
+    'from-green-500 to-emerald-600',
+    'from-orange-500 to-red-600',
+    'from-cyan-500 to-blue-600',
+    'from-pink-500 to-rose-600',
+    'from-indigo-500 to-purple-600',
+    'from-teal-500 to-cyan-600',
+    'from-amber-500 to-orange-600',
+    'from-lime-500 to-green-600',
+  ];
+  return gradients[userId % gradients.length];
+};
 
 export const Message: React.FC<MessageProps> = ({
   message,
@@ -80,14 +97,14 @@ export const Message: React.FC<MessageProps> = ({
     if (diffInHours < 24) {
       return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     } else {
-      return date.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+      return date.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     }
   };
 
   return (
     <div
-      className={`group relative px-4 py-2 hover:bg-gray-50 ${
-        isDeleted ? 'opacity-50' : ''
+      className={`group relative px-6 py-3 hover:bg-white transition-colors ${
+        isDeleted ? 'opacity-60' : ''
       }`}
       onMouseEnter={() => setShowMenu(true)}
       onMouseLeave={() => {
@@ -95,10 +112,10 @@ export const Message: React.FC<MessageProps> = ({
         setShowEmojiPicker(false);
       }}
     >
-      <div className="flex items-start space-x-3">
+      <div className="flex items-start gap-4">
         {/* Avatar */}
         <div className="flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${getAvatarGradient(message.sender_id)} flex items-center justify-center text-white font-bold text-lg shadow-md ring-2 ring-white`}>
             {message.sender?.first_name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
         </div>
@@ -106,51 +123,64 @@ export const Message: React.FC<MessageProps> = ({
         {/* Message Content */}
         <div className="flex-1 min-w-0">
           {/* Header */}
-          <div className="flex items-baseline space-x-2 mb-1">
-            <span className="font-semibold text-gray-900">
+          <div className="flex items-baseline gap-3 mb-1.5">
+            <span className="font-bold text-gray-900 text-sm">
               {message.sender ? `${message.sender.first_name} ${message.sender.last_name}` : 'Unknown User'}
             </span>
             <span className="text-xs text-gray-500">
               {formatTime(message.created_at)}
             </span>
             {message.is_edited && (
-              <span className="text-xs text-gray-400 italic">(modificato)</span>
+              <span className="text-xs text-gray-400 italic bg-gray-100 px-2 py-0.5 rounded">modificato</span>
             )}
           </div>
 
           {/* Content */}
           {isDeleted ? (
-            <p className="text-sm text-gray-400 italic">
-              Messaggio eliminato
-            </p>
+            <div className="inline-block px-4 py-2 bg-gray-100 rounded-lg">
+              <p className="text-sm text-gray-500 italic">
+                Messaggio eliminato
+              </p>
+            </div>
           ) : (
-            <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+            <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words max-w-3xl">
               {message.content}
             </div>
           )}
 
           {/* File Attachment */}
           {message.file_url && !isDeleted && (
-            <div className="mt-2 p-3 bg-gray-100 rounded border border-gray-200 max-w-md">
+            <div className="mt-3 inline-flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg max-w-md group hover:shadow-md transition-all">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                  <FileIcon className="w-5 h-5 text-indigo-600" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-indigo-900 truncate">
+                  {message.file_name || 'File'}
+                </p>
+                {message.file_size && (
+                  <p className="text-xs text-indigo-600">
+                    {(message.file_size / 1024).toFixed(1)} KB
+                  </p>
+                )}
+              </div>
               <a
                 href={message.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:underline flex items-center"
+                className="flex-shrink-0 p-2 hover:bg-white rounded-lg transition-colors"
+                title="Scarica"
               >
-                <span className="truncate">{message.file_name || 'File'}</span>
-                {message.file_size && (
-                  <span className="ml-2 text-xs text-gray-500">
-                    ({(message.file_size / 1024).toFixed(1)} KB)
-                  </span>
-                )}
+                <Download className="w-4 h-4 text-indigo-600" />
               </a>
             </div>
           )}
 
           {/* Reactions */}
           {Object.keys(groupedReactions).length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1.5 mt-2">
               {Object.entries(groupedReactions).map(([emoji, reactions]) => {
                 const hasUserReacted = reactions.some(
                   (r) => r.user_id === currentUserId
@@ -169,15 +199,15 @@ export const Message: React.FC<MessageProps> = ({
                         handleAddReaction(emoji);
                       }
                     }}
-                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium border-2 transition-all hover:scale-105 ${
                       hasUserReacted
-                        ? 'bg-blue-100 border-blue-300 text-blue-700'
-                        : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-indigo-100 border-indigo-400 text-indigo-800 shadow-sm'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
                     }`}
                     title={reactions.map((r) => r.user ? `${r.user.first_name} ${r.user.last_name}` : 'Unknown').join(', ')}
                   >
-                    <span>{emoji}</span>
-                    <span className="ml-1">{reactions.length}</span>
+                    <span className="text-base leading-none">{emoji}</span>
+                    <span className="font-bold">{reactions.length}</span>
                   </button>
                 );
               })}
@@ -188,37 +218,39 @@ export const Message: React.FC<MessageProps> = ({
           {message.thread_reply_count > 0 && onThreadClick && (
             <button
               onClick={() => onThreadClick(message)}
-              className="mt-2 text-xs text-blue-600 hover:underline flex items-center"
+              className="mt-3 inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
             >
-              <MessageSquare className="w-3 h-3 mr-1" />
-              {message.thread_reply_count}{' '}
-              {message.thread_reply_count === 1 ? 'risposta' : 'risposte'}
+              <MessageSquare className="w-4 h-4" />
+              <span>
+                {message.thread_reply_count}{' '}
+                {message.thread_reply_count === 1 ? 'risposta' : 'risposte'}
+              </span>
             </button>
           )}
         </div>
 
         {/* Hover Actions */}
         {showMenu && !isDeleted && (
-          <div className="flex items-center space-x-1 bg-white border border-gray-200 rounded shadow-sm px-1 py-1">
+          <div className="absolute top-2 right-6 flex items-center gap-1 bg-white border border-gray-300 rounded-lg shadow-lg px-1 py-1 z-10">
             {/* Emoji Picker Toggle */}
             <div className="relative">
               <button
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-2 hover:bg-indigo-50 rounded-md transition-colors group"
                 title="Aggiungi reaction"
               >
-                <Smile className="w-4 h-4 text-gray-600" />
+                <Smile className="w-4 h-4 text-gray-600 group-hover:text-indigo-600" />
               </button>
 
               {/* Emoji Picker Dropdown */}
               {showEmojiPicker && (
-                <div className="absolute z-10 top-8 right-0 bg-white border border-gray-200 rounded shadow-lg p-2 flex space-x-1">
+                <div className="absolute z-20 top-10 right-0 bg-white border border-gray-300 rounded-lg shadow-xl p-2 flex gap-1">
                   {COMMON_EMOJIS.map((emoji) => (
                     <button
                       key={emoji}
                       onClick={() => handleAddReaction(emoji)}
                       disabled={isAddingReaction}
-                      className="hover:bg-gray-100 p-1 rounded text-lg"
+                      className="hover:bg-indigo-50 p-2 rounded-md text-xl transition-all hover:scale-125"
                     >
                       {emoji}
                     </button>
@@ -231,10 +263,10 @@ export const Message: React.FC<MessageProps> = ({
             {onThreadClick && !message.parent_message_id && (
               <button
                 onClick={() => onThreadClick(message)}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-2 hover:bg-indigo-50 rounded-md transition-colors group"
                 title="Rispondi in thread"
               >
-                <MessageSquare className="w-4 h-4 text-gray-600" />
+                <MessageSquare className="w-4 h-4 text-gray-600 group-hover:text-indigo-600" />
               </button>
             )}
 
@@ -242,10 +274,10 @@ export const Message: React.FC<MessageProps> = ({
             {isOwnMessage && onEdit && (
               <button
                 onClick={() => onEdit(message)}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-2 hover:bg-amber-50 rounded-md transition-colors group"
                 title="Modifica"
               >
-                <Edit2 className="w-4 h-4 text-gray-600" />
+                <Edit2 className="w-4 h-4 text-gray-600 group-hover:text-amber-600" />
               </button>
             )}
 
@@ -253,16 +285,19 @@ export const Message: React.FC<MessageProps> = ({
             {isOwnMessage && (
               <button
                 onClick={handleDeleteMessage}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-2 hover:bg-red-50 rounded-md transition-colors group"
                 title="Elimina"
               >
-                <Trash2 className="w-4 h-4 text-red-600" />
+                <Trash2 className="w-4 h-4 text-gray-600 group-hover:text-red-600" />
               </button>
             )}
 
             {/* More Options */}
-            <button className="p-1 hover:bg-gray-100 rounded" title="Altro">
-              <MoreVertical className="w-4 h-4 text-gray-600" />
+            <button
+              className="p-2 hover:bg-gray-100 rounded-md transition-colors group"
+              title="Altro"
+            >
+              <MoreVertical className="w-4 h-4 text-gray-600 group-hover:text-gray-800" />
             </button>
           </div>
         )}
