@@ -23,6 +23,7 @@ import { IMAPSettings } from './pages/inbox/IMAPSettings';
 import { ProjectsDashboard } from './pages/projects/ProjectsDashboard';
 import { ProjectDetail } from './pages/projects/ProjectDetail';
 import { ChatLayout } from './pages/chat/ChatLayout';
+import { ProjectEventList, ProjectEventDetail, ProjectEventEdit } from './pages/project-events';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const token = localStorage.getItem('access_token');
@@ -228,6 +229,42 @@ function App() {
           element={
             <ProtectedRoute>
               <ChatLayout />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/project-events"
+          element={
+            <ProtectedRoute>
+              <ProjectEventList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/project-events/new"
+          element={
+            <ProtectedRoute>
+              <ProjectEventEdit />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/project-events/:id"
+          element={
+            <ProtectedRoute>
+              <ProjectEventDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/project-events/:id/edit"
+          element={
+            <ProtectedRoute>
+              <ProjectEventEdit />
             </ProtectedRoute>
           }
         />

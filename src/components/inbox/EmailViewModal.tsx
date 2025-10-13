@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { X, Mail, Calendar, Paperclip, ExternalLink, Reply, Forward, FolderInput, Trash2, Send, Upload } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Mail, Calendar, Paperclip, ExternalLink, Reply, Forward, FolderInput, Trash2, Send, Upload, Sparkles, ListTodo, FolderPlus } from 'lucide-react';
+import { aiAPI } from '../../api/ai';
+import { projectsAPI } from '../../api/projects';
 
 interface EmailViewModalProps {
   email: {
@@ -46,6 +48,21 @@ export const EmailViewModal: React.FC<EmailViewModalProps> = ({
   const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const [forwardAttachments, setForwardAttachments] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
+
+  // AI Assistant states
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiMode, setAiMode] = useState<'summarize' | 'extract-tasks' | 'smart-reply'>('summarize');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  // Project creation states
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [todoListName, setTodoListName] = useState('');
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   const formatDateTime = (dateString: string) => {
     try {
@@ -164,6 +181,40 @@ export const EmailViewModal: React.FC<EmailViewModalProps> = ({
         onDelete(email.uid);
       }
       onClose();
+    }
+  };
+
+  const handleAIAction = async (mode: 'summarize' | 'extract-tasks' | 'smart-reply') => {
+    setAiMode(mode);
+    setShowAIModal(true);
+    setAiLoading(true);
+    setAiError(null);
+    setAiResult(null);
+
+    try {
+      const request = {
+        subject: email.subject || '(Nessun oggetto)',
+        body_html: email.body_html,
+        body_text: email.body_text,
+        from_email: email.from_email,
+        from_name: email.from_name
+      };
+
+      let result;
+      if (mode === 'summarize') {
+        result = await aiAPI.summarizeText(request);
+      } else if (mode === 'extract-tasks') {
+        result = await aiAPI.extractTasksFromText(request);
+      } else {
+        result = await aiAPI.generateSmartReplyFromText(request);
+      }
+
+      setAiResult(result);
+    } catch (err: any) {
+      console.error('AI Error:', err);
+      setAiError(err.response?.data?.detail || 'Errore durante l\'elaborazione AI');
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -439,6 +490,25 @@ export const EmailViewModal: React.FC<EmailViewModalProps> = ({
               <Reply size={16} />
               <span>Rispondi</span>
             </button>
+
+            {/* AI Buttons */}
+            <button
+              onClick={() => handleAIAction('summarize')}
+              className="px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 flex items-center space-x-1"
+              title="Riassumi con AI"
+            >
+              <Sparkles size={14} />
+              <span>Riassumi</span>
+            </button>
+            <button
+              onClick={() => handleAIAction('extract-tasks')}
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-1"
+              title="Estrai task"
+            >
+              <ListTodo size={14} />
+              <span>Task</span>
+            </button>
+
             <button
               onClick={handleForward}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
@@ -486,6 +556,181 @@ export const EmailViewModal: React.FC<EmailViewModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* AI Result Modal */}
+      {showAIModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-blue-600">
+              <div className="flex items-center space-x-2 text-white">
+                <Sparkles size={20} />
+                <h3 className="font-semibold">
+                  {aiMode === 'summarize' && 'Riassunto Email'}
+                  {aiMode === 'extract-tasks' && 'Task Estratti'}
+                  {aiMode === 'smart-reply' && 'Risposta Suggerita'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAIModal(false)}
+                className="p-1 hover:bg-white/20 rounded transition-colors text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {aiLoading && (
+                <div className="text-center py-12">
+                  <div className="inline-block w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-gray-600">Elaborazione AI in corso...</p>
+                </div>
+              )}
+
+              {aiError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                  <p className="font-medium">Errore</p>
+                  <p className="text-sm mt-1">{aiError}</p>
+                </div>
+              )}
+
+              {aiResult && !aiLoading && (
+                <div className="space-y-4">
+                  {/* Summary Result */}
+                  {aiMode === 'summarize' && (
+                    <>
+                      {aiResult.sentiment && (
+                        <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          {aiResult.sentiment}
+                        </div>
+                      )}
+                      {aiResult.summary && (
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">Riassunto</h4>
+                          <p className="text-gray-700">{aiResult.summary}</p>
+                        </div>
+                      )}
+                      {aiResult.key_points && aiResult.key_points.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">Punti Chiave</h4>
+                          <ul className="space-y-1">
+                            {aiResult.key_points.map((point: string, idx: number) => (
+                              <li key={idx} className="flex items-start space-x-2">
+                                <span className="text-green-600 mt-1">✓</span>
+                                <span className="text-gray-700">{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Tasks Result */}
+                  {aiMode === 'extract-tasks' && (
+                    <>
+                      <p className="text-sm text-gray-600">
+                        {aiResult.tasks_found} task trovati
+                      </p>
+                      {aiResult.tasks && aiResult.tasks.length > 0 ? (
+                        <div className="space-y-3">
+                          {aiResult.tasks.map((task: any, idx: number) => (
+                            <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <h5 className="font-medium text-gray-900">{task.title}</h5>
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                                  task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {task.priority.toUpperCase()}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600">{task.description}</p>
+                              {(task.due_date || task.estimated_hours) && (
+                                <div className="mt-2 text-xs text-gray-500">
+                                  {task.due_date && <span>📅 {task.due_date}</span>}
+                                  {task.estimated_hours && <span className="ml-3">⏱️ {task.estimated_hours}h</span>}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-center py-8">Nessun task trovato</p>
+                      )}
+                    </>
+                  )}
+
+                  {/* Smart Reply Result */}
+                  {aiMode === 'smart-reply' && (
+                    <>
+                      {aiResult.subject && (
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">Oggetto</h4>
+                          <p className="text-gray-700 bg-gray-50 p-3 rounded">{aiResult.subject}</p>
+                        </div>
+                      )}
+                      {aiResult.body && (
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">Risposta</h4>
+                          <div className="text-gray-700 bg-gray-50 p-4 rounded whitespace-pre-wrap">
+                            {aiResult.body}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-200 flex justify-between">
+              {aiMode === 'extract-tasks' && aiResult?.tasks && aiResult.tasks.length > 0 && (
+                <button
+                  onClick={async () => {
+                    const projectName = prompt('Nome del progetto:');
+                    if (!projectName) return;
+
+                    try {
+                      setCreatingProject(true);
+                      const result = await aiAPI.createProjectFromTasks({
+                        project_name: projectName,
+                        todo_list_name: `Task da: ${email.subject}`,
+                        email_subject: email.subject,
+                        email_from: email.from_email,
+                        email_date: email.date,
+                        tasks: aiResult.tasks
+                      });
+                      alert(`✅ Progetto "${result.project_name}" creato!\n\n📋 ${result.tasks_count} task creati:\n${result.created_tasks.map((t: any) => `• ${t.title} (${t.priority})`).join('\n')}\n\nVai su Progetti per vedere i dettagli.`);
+                      setShowAIModal(false);
+                      // Optionally redirect to project
+                      if (window.confirm('Vuoi aprire il progetto ora?')) {
+                        window.location.href = `/projects/${result.project_id}`;
+                      }
+                    } catch (error: any) {
+                      alert('Errore creazione progetto: ' + (error.response?.data?.detail || error.message));
+                    } finally {
+                      setCreatingProject(false);
+                    }
+                  }}
+                  disabled={creatingProject}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2"
+                >
+                  <FolderPlus size={16} />
+                  <span>{creatingProject ? 'Creazione...' : 'Crea Progetto'}</span>
+                </button>
+              )}
+              <button
+                onClick={() => setShowAIModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

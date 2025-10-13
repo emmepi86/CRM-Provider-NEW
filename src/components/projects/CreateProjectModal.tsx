@@ -3,17 +3,19 @@ import { X } from 'lucide-react';
 import { projectsAPI } from '../../api/projects';
 
 interface CreateProjectModalProps {
+  eventId?: number;
   onClose: () => void;
   onSuccess: (project: any) => void;
 }
 
-export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose, onSuccess }) => {
+export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ eventId, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     color: '#3b82f6',
     start_date: '',
-    due_date: ''
+    due_date: '',
+    event_id: eventId
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

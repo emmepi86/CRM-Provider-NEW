@@ -73,14 +73,14 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({ entityType, entity
       const contents = await foldersAPI.getContents(folder.id);
       setCurrentFolder(contents.folder);
 
-      const docsResponse = await documentsAPI.getByEntity(entityType, entityId);
-      const folderDocs = docsResponse.documents.filter(d => Number(d.folder_id) === Number(folder.id));
-      setDocuments(folderDocs);
+      // Use folder contents API to get ALL documents in folder (any entity_type)
+      const folderContents = await foldersAPI.getContents(folder.id);
+      setDocuments(folderContents.documents || []);
 
       buildBreadcrumb(folder);
 
-      // Auto-expand path to current folder
-      const pathToExpand = new Set<number>();
+      // Auto-expand path to current folder - MERGE with existing state
+      const pathToExpand = new Set<number>(expandedFolders);
       let current = folder;
       while (current.parent_folder_id) {
         pathToExpand.add(current.parent_folder_id);
@@ -453,9 +453,8 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({ entityType, entity
 
     // Reload documents in current folder
     if (currentFolder) {
-      const docsResponse = await documentsAPI.getByEntity(entityType, entityId);
-      const folderDocs = docsResponse.documents.filter(d => Number(d.folder_id) === Number(currentFolder.id));
-      setDocuments(folderDocs);
+      const folderContents = await foldersAPI.getContents(currentFolder.id);
+      setDocuments(folderContents.documents || []);
     }
   };
 
@@ -469,9 +468,8 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({ entityType, entity
 
     // Reload documents in current folder
     if (currentFolder) {
-      const docsResponse = await documentsAPI.getByEntity(entityType, entityId);
-      const folderDocs = docsResponse.documents.filter(d => Number(d.folder_id) === Number(currentFolder.id));
-      setDocuments(folderDocs);
+      const folderContents = await foldersAPI.getContents(currentFolder.id);
+      setDocuments(folderContents.documents || []);
     }
   };
 

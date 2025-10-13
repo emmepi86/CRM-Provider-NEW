@@ -7,14 +7,16 @@ interface EmailComposerProps {
   threadId: number;
   onClose: () => void;
   onSuccess: () => void;
+  initialBody?: string; // Optional initial body from AI
 }
 
 export const EmailComposer: React.FC<EmailComposerProps> = ({
   threadId,
   onClose,
   onSuccess,
+  initialBody = '',
 }) => {
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState(initialBody);
   const [sending, setSending] = useState(false);
 
   const handleSend = async () => {

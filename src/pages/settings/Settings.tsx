@@ -46,6 +46,7 @@ export const Settings: React.FC = () => {
         mailing_enabled: data.mailing_enabled,
         meetings_enabled: data.meetings_enabled,
         landing_pages_enabled: data.landing_pages_enabled,
+        chat_enabled: data.chat_enabled,
         smtp_host: data.smtp_host || '',
         smtp_port: data.smtp_port || 587,
         smtp_username: data.smtp_username || '',
@@ -65,6 +66,11 @@ export const Settings: React.FC = () => {
         jitsi_logo_url: data.jitsi_logo_url || '',
         jitsi_primary_color: data.jitsi_primary_color || '#007bff',
         jitsi_background_color: data.jitsi_background_color || '#ffffff',
+        ai_assistant_enabled: data.ai_assistant_enabled,
+        openai_api_key: data.openai_api_key || '',
+        openai_model: data.openai_model || 'gpt-4-turbo-preview',
+        openai_max_tokens: data.openai_max_tokens || 2000,
+        openai_temperature: data.openai_temperature || 7,
         notes: data.notes,
       });
     } catch (err: any) {
@@ -299,6 +305,15 @@ export const Settings: React.FC = () => {
             enabled={formData.landing_pages_enabled ?? true}
             onToggle={() => handleToggle('landing_pages_enabled')}
             icon="🌐"
+          />
+
+          {/* Chat System */}
+          <FeatureToggle
+            title="Sistema Chat Interno"
+            description="Abilita la chat per comunicazione interna tra utenti, canali di team e progetti"
+            enabled={formData.chat_enabled ?? true}
+            onToggle={() => handleToggle('chat_enabled')}
+            icon="💬"
           />
         </div>
 
@@ -627,6 +642,134 @@ export const Settings: React.FC = () => {
             <TestTube size={18} />
             <span>{testingMailingSmtp ? 'Test in corso...' : 'Test Connessione Mailing'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* AI Assistant Configuration */}
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl">✨</span>
+                <h2 className="text-lg font-semibold text-gray-900">AI Assistant (OpenAI)</h2>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Abilita l'assistente AI per riassunti email intelligenti ed estrazione automatica di task
+              </p>
+            </div>
+            <button
+              onClick={() => handleToggle('ai_assistant_enabled')}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                formData.ai_assistant_enabled ? 'bg-green-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  formData.ai_assistant_enabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* OpenAI API Key */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              OpenAI API Key <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              value={formData.openai_api_key || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, openai_api_key: e.target.value }))}
+              placeholder="sk-proj-..."
+              disabled={!formData.ai_assistant_enabled}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Ottieni la tua API key da <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">platform.openai.com/api-keys</a>
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Model Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Modello AI
+              </label>
+              <select
+                value={formData.openai_model || 'gpt-4-turbo-preview'}
+                onChange={(e) => setFormData(prev => ({ ...prev, openai_model: e.target.value }))}
+                disabled={!formData.ai_assistant_enabled}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="gpt-4-turbo-preview">GPT-4 Turbo (migliore)</option>
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo (economico)</option>
+              </select>
+            </div>
+
+            {/* Max Tokens */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Max Token
+              </label>
+              <input
+                type="number"
+                value={formData.openai_max_tokens || 2000}
+                onChange={(e) => setFormData(prev => ({ ...prev, openai_max_tokens: parseInt(e.target.value) }))}
+                disabled={!formData.ai_assistant_enabled}
+                min="500"
+                max="4000"
+                step="100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* Temperature (0-10, diviso per 10 nel backend) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Temperatura (creatività)
+              </label>
+              <input
+                type="range"
+                value={formData.openai_temperature || 7}
+                onChange={(e) => setFormData(prev => ({ ...prev, openai_temperature: parseInt(e.target.value) }))}
+                disabled={!formData.ai_assistant_enabled}
+                min="0"
+                max="10"
+                step="1"
+                className="w-full disabled:opacity-50"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Preciso (0)</span>
+                <span className="font-medium">{(formData.openai_temperature || 7) / 10}</span>
+                <span>Creativo (1)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Features Info */}
+          {formData.ai_assistant_enabled && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm font-medium text-green-800 mb-2">✨ Funzionalità Abilitate:</p>
+              <ul className="text-sm text-green-700 space-y-1">
+                <li>• 📧 Riassunto intelligente email con sentiment analysis</li>
+                <li>• 📋 Estrazione automatica task operativi</li>
+                <li>• ⚡ Creazione automatica todo items nei progetti</li>
+                <li>• 💡 Suggerimenti di risposta contestuale</li>
+              </ul>
+            </div>
+          )}
+
+          {!formData.ai_assistant_enabled && (
+            <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-600">
+                ℹ️ Attiva l'AI Assistant per abilitare riassunti email intelligenti ed estrazione automatica di task.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

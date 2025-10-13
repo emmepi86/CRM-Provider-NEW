@@ -17,9 +17,10 @@ import { EditEventModal } from '../../components/events/EditEventModal';
 import { SendEmailModal } from '../../components/emails/SendEmailModal';
 import { MeetingTab } from '../../components/events/MeetingTab';
 import { LandingTab } from '../../components/events/LandingTab';
+import { EventProjectsTab } from '../../components/events/EventProjectsTab';
 import { Event, Enrollment, EmailRecipient } from '../../types';
 
-type TabType = 'enrollments' | 'sessions' | 'meetings' | 'documents' | 'speakers' | 'sponsors' | 'patronages' | 'badges' | 'landing';
+type TabType = 'enrollments' | 'projects' | 'sessions' | 'meetings' | 'documents' | 'speakers' | 'sponsors' | 'patronages' | 'badges' | 'landing';
 
 export const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -306,6 +307,17 @@ export const EventDetail: React.FC = () => {
               <Users size={18} />
               <span>Iscritti ({enrollments.length})</span>
             </button>
+            <button
+              onClick={() => setActiveTab('projects')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === 'projects'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Clipboard size={18} />
+              <span>Progetti</span>
+            </button>
             {event.event_type !== 'ecm' && !event.moodle_course_id && (
               <button
                 onClick={() => setActiveTab('landing')}
@@ -590,6 +602,10 @@ export const EventDetail: React.FC = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {activeTab === 'projects' && (
+            <EventProjectsTab eventId={event.id} />
           )}
 
           {activeTab === 'speakers' && (

@@ -9,6 +9,7 @@ import { AddMemberModal } from '../../components/projects/AddMemberModal';
 import { MessageBoard } from '../../components/projects/MessageBoard';
 import { MessageModal } from '../../components/projects/MessageModal';
 import { MilestoneModal } from '../../components/projects/MilestoneModal';
+import { TaskAttachments } from '../../components/projects/TaskAttachments';
 import { useAuth } from '../../hooks/useAuth';
 
 export const ProjectDetail: React.FC = () => {
@@ -373,14 +374,23 @@ export const ProjectDetail: React.FC = () => {
     );
   }
 
+  const goBack = () => {
+    if (project.event_id) {
+      navigate(`/events/${project.event_id}`);
+    } else {
+      navigate('/projects');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-center gap-4 mb-4">
           <button
-            onClick={() => navigate('/projects')}
+            onClick={goBack}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title={project.event_id ? "Torna all'evento" : "Torna ai progetti"}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -721,6 +731,11 @@ export const ProjectDetail: React.FC = () => {
                               <span>👤 {item.assignee_name}</span>
                             )}
                           </div>
+                          <TaskAttachments
+                            todoItemId={item.id}
+                            projectName={project.name}
+                            eventId={project.event_id}
+                          />
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button

@@ -142,6 +142,11 @@ export const useAuth = () => {
     return user?.can_use_landing_pages ?? false;
   };
 
+  const canUseEventManagement = (): boolean => {
+    if (isSuperadmin()) return true;
+    return settings?.event_management_enabled ?? true;
+  };
+
   return {
     user,
     loading: loading || settingsLoading,
@@ -169,5 +174,6 @@ export const useAuth = () => {
     canUseProjects,
     canUseEmailHub,
     canUseLandingPages,
+    canUseEventManagement,
   };
 };

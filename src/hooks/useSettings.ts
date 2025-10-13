@@ -98,6 +98,8 @@ export const useSettings = () => {
       meetings_enabled: true,
       landing_pages_enabled: true,
       chat_enabled: true,
+      event_management_enabled: true,
+      ai_assistant_enabled: false,
       custom_settings: {},
     };
   };

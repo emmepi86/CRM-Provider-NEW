@@ -14,7 +14,8 @@ import {
   Shield,
   Mail,
   FolderKanban,
-  MessageSquare
+  MessageSquare,
+  ClipboardList
 } from 'lucide-react';
 import { authAPI } from '../../api/auth';
 import { useAuth } from '../../hooks/useAuth';
@@ -40,11 +41,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  const { canUseChat, canUseProjects, canUseEmailHub } = useAuth();
+  const { canUseChat, canUseProjects, canUseEmailHub, canUseEventManagement } = useAuth();
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', show: true },
     { path: '/events', icon: Calendar, label: 'Eventi', show: true },
+    { path: '/project-events', icon: ClipboardList, label: 'Gestione Eventi', show: canUseEventManagement() },
     { path: '/projects', icon: FolderKanban, label: 'Progetti', show: canUseProjects() },
     { path: '/chat', icon: MessageSquare, label: 'Chat Interna', show: canUseChat() },
     { path: '/inbox', icon: Mail, label: 'Email Hub', show: canUseEmailHub() },

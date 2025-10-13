@@ -315,6 +315,7 @@ export interface FolderCreate {
 export interface FolderContents {
   folder: Folder;
   subfolders: Folder[];
+  documents: Document[];
   document_count: number;
 }
 
@@ -332,6 +333,7 @@ export interface SystemSettings {
   meetings_enabled: boolean;
   landing_pages_enabled: boolean;
   chat_enabled: boolean;
+  event_management_enabled: boolean;
   smtp_host?: string;
   smtp_port?: number;
   smtp_username?: string;
@@ -351,6 +353,11 @@ export interface SystemSettings {
   jitsi_logo_url?: string;
   jitsi_primary_color?: string;
   jitsi_background_color?: string;
+  ai_assistant_enabled: boolean;
+  openai_api_key?: string;
+  openai_model?: string;
+  openai_max_tokens?: number;
+  openai_temperature?: number;
   custom_settings: Record<string, any>;
   notes?: string;
 }
@@ -367,6 +374,7 @@ export interface SystemSettingsUpdate {
   meetings_enabled?: boolean;
   landing_pages_enabled?: boolean;
   chat_enabled?: boolean;
+  event_management_enabled?: boolean;
   smtp_host?: string;
   smtp_port?: number;
   smtp_username?: string;
@@ -386,6 +394,11 @@ export interface SystemSettingsUpdate {
   jitsi_logo_url?: string;
   jitsi_primary_color?: string;
   jitsi_background_color?: string;
+  ai_assistant_enabled?: boolean;
+  openai_api_key?: string;
+  openai_model?: string;
+  openai_max_tokens?: number;
+  openai_temperature?: number;
   custom_settings?: Record<string, any>;
   notes?: string;
 }

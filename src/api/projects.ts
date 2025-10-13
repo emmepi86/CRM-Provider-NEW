@@ -145,6 +145,11 @@ export const projectsAPI = {
     return data;
   },
 
+  listByEvent: async (eventId: number, params?: { skip?: number; limit?: number }) => {
+    const { data } = await apiClient.get(`/projects/by-event/${eventId}`, { params });
+    return data;
+  },
+
   getStats: async () => {
     const { data } = await apiClient.get<ProjectStats>('/projects/stats');
     return data;
