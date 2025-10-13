@@ -261,4 +261,33 @@ export const inboxAPI = {
     const response = await apiClient.get('/inbox/stats');
     return response.data;
   },
+
+  // ============================================
+  // Email to Task Conversion
+  // ============================================
+
+  /**
+   * Create a project task from an email message
+   */
+  createTaskFromEmail: async (
+    messageId: number,
+    taskData: {
+      project_id: number;
+      todo_list_id: number;
+      title?: string;
+      description?: string;
+      priority?: string;
+      assigned_to?: number;
+      due_date?: string;
+    }
+  ): Promise<{
+    success: boolean;
+    task_id?: number;
+    project_id?: number;
+    todo_list_id?: number;
+    message: string;
+  }> => {
+    const response = await apiClient.post(`/inbox/messages/${messageId}/create-task`, taskData);
+    return response.data;
+  },
 };

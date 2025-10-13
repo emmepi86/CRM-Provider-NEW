@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Mail, Reply, Archive, Trash2, User, Calendar,
-  Paperclip, ExternalLink, Forward, FolderInput
+  Paperclip, ExternalLink, Forward, FolderInput, Sparkles, FileText, ListTodo
 } from 'lucide-react';
 import { inboxAPI } from '../../api/inbox';
 import type { ReceivedEmail, EmailThread } from '../../types/inbox';
 import { EmailComposer } from '../../components/inbox/EmailComposer';
 import { ForwardEmailModal } from '../../components/inbox/ForwardEmailModal';
+import { AIAssistantModal } from '../../components/inbox/AIAssistantModal';
+import { EmailToTaskModal } from '../../components/inbox/EmailToTaskModal';
 
 export const ThreadView: React.FC = () => {
   const { threadId } = useParams<{ threadId: string }>();
@@ -20,6 +22,16 @@ export const ThreadView: React.FC = () => {
   const [messageToForward, setMessageToForward] = useState<ReceivedEmail | null>(null);
   const [folders, setFolders] = useState<Array<{ name: string; flags: string[] }>>([]);
   const [loadingFolders, setLoadingFolders] = useState(false);
+
+  // AI Assistant states
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiEmailId, setAiEmailId] = useState<number | null>(null);
+  const [aiMode, setAiMode] = useState<'summarize' | 'extract-tasks' | 'smart-reply'>('summarize');
+  const [aiGeneratedBody, setAiGeneratedBody] = useState<string>('');
+
+  // Email to Task Modal
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [emailForTask, setEmailForTask] = useState<ReceivedEmail | null>(null);
 
   useEffect(() => {
     if (threadId) {
@@ -66,6 +78,7 @@ export const ThreadView: React.FC = () => {
 
   const handleReplySuccess = () => {
     setShowComposer(false);
+    setAiGeneratedBody(''); // Reset AI body
     if (threadId) {
       fetchMessages(parseInt(threadId));
     }
@@ -114,6 +127,24 @@ export const ThreadView: React.FC = () => {
       console.error('Errore spostamento:', error);
       alert('Errore durante lo spostamento del messaggio');
     }
+  };
+
+  const handleOpenAI = (emailId: number, mode: 'summarize' | 'extract-tasks' | 'smart-reply') => {
+    setAiEmailId(emailId);
+    setAiMode(mode);
+    setShowAIModal(true);
+  };
+
+  const handleTasksCreated = (taskIds: number[]) => {
+    console.log('Tasks created:', taskIds);
+    // You could navigate to project page or show notification
+  };
+
+  const handleReplyGenerated = (subject: string, body: string) => {
+    // Save AI generated body and open composer
+    setAiGeneratedBody(body);
+    setShowAIModal(false);
+    setShowComposer(true);
   };
 
   const formatDateTime = (dateString: string) => {
@@ -174,6 +205,19 @@ export const ThreadView: React.FC = () => {
             <button
               onClick={() => {
                 if (messages.length > 0) {
+                  // Generate smart reply for the most recent message
+                  handleOpenAI(messages[messages.length - 1].id, 'smart-reply');
+                }
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 flex items-center space-x-2"
+            >
+              <Sparkles size={16} />
+              <span>Risposta AI</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (messages.length > 0) {
                   setMessageToForward(messages[messages.length - 1]);
                   setShowForwardModal(true);
                 }
@@ -182,6 +226,19 @@ export const ThreadView: React.FC = () => {
             >
               <Forward size={16} />
               <span>Inoltra</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (messages.length > 0) {
+                  setEmailForTask(messages[messages.length - 1]);
+                  setShowTaskModal(true);
+                }
+              }}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
+            >
+              <ListTodo size={16} />
+              <span>Crea Task</span>
             </button>
 
             <button
@@ -260,6 +317,28 @@ export const ThreadView: React.FC = () => {
                   <div className="text-sm text-gray-500">
                     {formatDateTime(message.received_at)}
                   </div>
+
+                  {/* AI Actions */}
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => handleOpenAI(message.id, 'summarize')}
+                      className="px-2 py-1 text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded hover:from-purple-700 hover:to-blue-700 flex items-center space-x-1"
+                      title="Riassumi con AI"
+                    >
+                      <Sparkles size={12} />
+                      <span>Riassumi</span>
+                    </button>
+                    <button
+                      onClick={() => handleOpenAI(message.id, 'extract-tasks')}
+                      className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center space-x-1"
+                      title="Estrai task"
+                    >
+                      <ListTodo size={12} />
+                      <span>Task</span>
+                    </button>
+                  </div>
+
+                  {/* Regular Actions */}
                   <div className="flex items-center space-x-2">
                     {/* Move to folder */}
                     <div className="flex items-center space-x-1">
@@ -349,8 +428,12 @@ export const ThreadView: React.FC = () => {
       {showComposer && threadId && (
         <EmailComposer
           threadId={parseInt(threadId)}
-          onClose={() => setShowComposer(false)}
+          onClose={() => {
+            setShowComposer(false);
+            setAiGeneratedBody(''); // Reset AI body on close
+          }}
           onSuccess={handleReplySuccess}
+          initialBody={aiGeneratedBody}
         />
       )}
 
@@ -365,6 +448,38 @@ export const ThreadView: React.FC = () => {
           onSuccess={() => {
             setShowForwardModal(false);
             setMessageToForward(null);
+          }}
+        />
+      )}
+
+      {/* AI Assistant Modal */}
+      {showAIModal && aiEmailId && (
+        <AIAssistantModal
+          emailId={aiEmailId}
+          mode={aiMode}
+          onClose={() => {
+            setShowAIModal(false);
+            setAiEmailId(null);
+          }}
+          onTasksCreated={handleTasksCreated}
+          onReplyGenerated={handleReplyGenerated}
+        />
+      )}
+
+      {/* Email to Task Modal */}
+      {showTaskModal && emailForTask && (
+        <EmailToTaskModal
+          isOpen={showTaskModal}
+          email={emailForTask}
+          onClose={() => {
+            setShowTaskModal(false);
+            setEmailForTask(null);
+          }}
+          onSuccess={() => {
+            setShowTaskModal(false);
+            setEmailForTask(null);
+            // Optional: show success message
+            alert('Task creato con successo!');
           }}
         />
       )}
