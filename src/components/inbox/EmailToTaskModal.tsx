@@ -21,6 +21,15 @@ interface TodoList {
   id: number;
   name: string;
   project_id: number;
+  items?: TodoItem[];
+}
+
+interface TodoItem {
+  id: number;
+  title: string;
+  description?: string;
+  completed: boolean;
+  todo_list_id: number;
 }
 
 interface ProjectMember {
@@ -38,6 +47,7 @@ export const EmailToTaskModal: React.FC<EmailToTaskModalProps> = ({
   const [projects, setProjects] = useState<Project[]>([]);
   const [todoLists, setTodoLists] = useState<TodoList[]>([]);
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+  const [existingTasks, setExistingTasks] = useState<TodoItem[]>([]);
 
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [selectedTodoListId, setSelectedTodoListId] = useState<number | null>(null);
@@ -51,6 +61,7 @@ export const EmailToTaskModal: React.FC<EmailToTaskModalProps> = ({
   const [isLoadingTodoLists, setIsLoadingTodoLists] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<TodoItem[]>([]);
 
   // Load active projects on mount
   useEffect(() => {
@@ -70,10 +81,21 @@ export const EmailToTaskModal: React.FC<EmailToTaskModalProps> = ({
     } else {
       setTodoLists([]);
       setProjectMembers([]);
+      setExistingTasks([]);
       setSelectedTodoListId(null);
       setAssignedTo(null);
+      setDuplicateWarning([]);
     }
   }, [selectedProjectId]);
+
+  // Check for duplicates when title changes
+  useEffect(() => {
+    if (existingTasks.length > 0 && title.trim()) {
+      checkForDuplicates(title, existingTasks);
+    } else {
+      setDuplicateWarning([]);
+    }
+  }, [title, existingTasks]);
 
   const loadProjects = async () => {
     setIsLoadingProjects(true);
@@ -88,11 +110,70 @@ export const EmailToTaskModal: React.FC<EmailToTaskModalProps> = ({
     }
   };
 
+  // Calculate string similarity (Levenshtein distance based)
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase().trim();
+    const s2 = str2.toLowerCase().trim();
+
+    if (s1 === s2) return 1.0;
+
+    const longer = s1.length > s2.length ? s1 : s2;
+    const shorter = s1.length > s2.length ? s2 : s1;
+
+    if (longer.length === 0) return 1.0;
+
+    // Simple substring check for quick high similarity
+    if (longer.includes(shorter)) {
+      return shorter.length / longer.length;
+    }
+
+    // Check word overlap
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+    const commonWords = words1.filter(w => words2.includes(w)).length;
+    const totalWords = Math.max(words1.length, words2.length);
+
+    return commonWords / totalWords;
+  };
+
+  const checkForDuplicates = (taskTitle: string, tasks: TodoItem[]) => {
+    if (!taskTitle.trim()) {
+      setDuplicateWarning([]);
+      return;
+    }
+
+    const duplicates = tasks.filter(task => {
+      // Skip completed tasks
+      if (task.completed) return false;
+
+      const similarity = calculateSimilarity(taskTitle, task.title);
+      // Consider as duplicate if similarity > 60%
+      return similarity > 0.6;
+    });
+
+    setDuplicateWarning(duplicates);
+  };
+
   const loadTodoLists = async (projectId: number) => {
     setIsLoadingTodoLists(true);
     try {
       const project = await projectsAPI.getById(projectId);
       setTodoLists(project.todo_lists || []);
+
+      // Collect all tasks from all todo lists
+      const allTasks: TodoItem[] = [];
+      project.todo_lists?.forEach(list => {
+        if (list.items) {
+          allTasks.push(...list.items);
+        }
+      });
+      setExistingTasks(allTasks);
+
+      // Check for duplicates with current title
+      if (title.trim()) {
+        checkForDuplicates(title, allTasks);
+      }
+
       // Auto-select first todo list if available
       if (project.todo_lists && project.todo_lists.length > 0) {
         setSelectedTodoListId(project.todo_lists[0].id);
@@ -166,6 +247,8 @@ export const EmailToTaskModal: React.FC<EmailToTaskModalProps> = ({
     setSelectedTodoListId(null);
     setAssignedTo(null);
     setDueDate('');
+    setDuplicateWarning([]);
+    setExistingTasks([]);
     onClose();
   };
 
@@ -260,6 +343,42 @@ export const EmailToTaskModal: React.FC<EmailToTaskModalProps> = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Inserisci il titolo del task"
             />
+
+            {/* Duplicate Warning */}
+            {duplicateWarning.length > 0 && (
+              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div className="flex items-start gap-2">
+                  <span className="text-yellow-600 text-lg">⚠️</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-yellow-800 mb-1">
+                      Task simili già esistenti in questo progetto:
+                    </p>
+                    <ul className="text-xs text-yellow-700 space-y-1 ml-2">
+                      {duplicateWarning.slice(0, 3).map(task => {
+                        const todoList = todoLists.find(l => l.id === task.todo_list_id);
+                        return (
+                          <li key={task.id} className="flex items-start gap-1">
+                            <span className="mt-0.5">•</span>
+                            <span>
+                              <strong>{task.title}</strong>
+                              {todoList && <span className="text-gray-600"> (in {todoList.name})</span>}
+                            </span>
+                          </li>
+                        );
+                      })}
+                      {duplicateWarning.length > 3 && (
+                        <li className="text-gray-600 italic">
+                          ...e altri {duplicateWarning.length - 3} task simili
+                        </li>
+                      )}
+                    </ul>
+                    <p className="text-xs text-yellow-600 mt-2">
+                      Puoi comunque creare il task, ma verifica che non sia già presente.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Task Description */}
